@@ -1,11 +1,10 @@
 node_modules
-.output
 .wxt
 .vscode
 .idea
 .DS_Store
 coverage
-dist
+build
 *.log
 pnpm-debug.log*
 web-ext.config.ts

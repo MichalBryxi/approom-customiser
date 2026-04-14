@@ -19,6 +19,7 @@ function getDefaultChromiumBinary() {
 const chromiumBinary = getDefaultChromiumBinary();
 
 export default defineConfig({
+  outDir: 'build',
   webExt: {
     binaries: chromiumBinary
       ? {

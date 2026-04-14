@@ -51,8 +51,8 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 4. Open the Extensions page in Chromium with `chrome://extensions`.
 5. Enable `Developer mode`.
 6. Click `Load unpacked`.
-7. Select `.output/chromium-mv3-dev` when using `pnpm dev`.
-8. Select `.output/chrome-mv3` when using `pnpm build`.
+7. Select `build/chromium-mv3-dev` when using `pnpm dev`.
+8. Select `build/chrome-mv3` when using `pnpm build`.
 9. After rebuilding, click the extension's `Reload` button in the Extensions page.
 
 ## Testing
@@ -73,6 +73,7 @@ pnpm test
    ```
 
 3. Upload the generated archive from `.output/*/*.zip` to the Chrome Web Store dashboard.
+3. Upload the generated archive from `build/*.zip` to the Chrome Web Store dashboard.
 
 Optional WXT submit helpers:
 

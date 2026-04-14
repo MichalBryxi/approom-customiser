@@ -1,12 +1,9 @@
 import { syncPrintButton } from './menu-button';
-import { savePrintJob } from '../print-job';
-import { extractVisibleEntriesFromRow } from '../row-extraction';
+import { extractPrintableRowsFromTable } from '../row-extraction';
 import { getSettings } from '../settings';
-import type { ExtensionSettings, PrintJob } from '../types';
+import type { ExtensionSettings, PrintRow } from '../types';
 
 export class RentalPrintFeature {
-  private activeRow: HTMLTableRowElement | null = null;
-
   private settings: ExtensionSettings | null = null;
 
   private observer: MutationObserver | null = null;
@@ -18,11 +15,10 @@ export class RentalPrintFeature {
   private async initialize() {
     this.settings = await getSettings();
 
-    document.addEventListener('click', this.handleDocumentClick, true);
     chrome.storage.onChanged.addListener(this.handleStorageChange);
 
     this.observer = new MutationObserver(() => {
-      this.syncMenuButton();
+      this.syncPageButton();
     });
 
     this.observer.observe(document.body, {
@@ -30,20 +26,8 @@ export class RentalPrintFeature {
       subtree: true,
     });
 
-    this.syncMenuButton();
+    this.syncPageButton();
   }
-
-  private readonly handleDocumentClick = (event: Event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return;
-    }
-
-    const row = target.closest('tbody tr');
-    if (row instanceof HTMLTableRowElement) {
-      this.activeRow = row;
-    }
-  };
 
   private readonly handleStorageChange = (
     changes: Record<string, chrome.storage.StorageChange>,
@@ -58,42 +42,75 @@ export class RentalPrintFeature {
         ...this.settings,
         rentalPrintButton: Boolean(changes.rentalPrintButton.newValue),
       };
-      this.syncMenuButton();
+      this.syncPageButton();
     }
   };
 
-  private syncMenuButton() {
-    const menuRoot = document.querySelector<HTMLElement>('#dropdown-right');
-    if (!menuRoot || !this.settings) {
+  private syncPageButton() {
+    if (!this.settings) {
       return;
     }
 
-    syncPrintButton(menuRoot, this.settings.rentalPrintButton, (event) => {
+    syncPrintButton(this.settings.rentalPrintButton, (event) => {
       event.preventDefault();
       event.stopPropagation();
       void this.handlePrintClick();
     });
   }
 
+  private renderPrintPreview(printWindow: Window, rows: PrintRow[]) {
+    printWindow.document.title = 'Druckvorschau';
+    printWindow.document.body.innerHTML = '';
+    printWindow.document.body.style.margin = '12px';
+    printWindow.document.body.style.fontFamily =
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    printWindow.document.body.style.fontSize = '12px';
+
+    const preview = printWindow.document.createElement('pre');
+    preview.style.whiteSpace = 'pre-wrap';
+    preview.style.margin = '0';
+    preview.textContent = rows
+      .map((row) => row.map(({ key, value }) => `${key}: ${value}`).join(' | '))
+      .join('\n');
+
+    printWindow.document.body.append(preview);
+  }
+
+  private startPrint(printWindow: Window) {
+    printWindow.addEventListener(
+      'afterprint',
+      () => {
+        printWindow.close();
+      },
+      { once: true },
+    );
+
+    printWindow.focus();
+    printWindow.setTimeout(() => {
+      printWindow.print();
+    }, 50);
+  }
+
   private async handlePrintClick() {
-    if (!(this.activeRow instanceof HTMLTableRowElement) || !document.contains(this.activeRow)) {
-      window.alert('Keine aktive Zeile gefunden.');
+    const table = document.querySelector<HTMLTableElement>('table');
+    if (!table) {
+      window.alert('Keine Tabelle gefunden.');
       return;
     }
 
-    const entries = extractVisibleEntriesFromRow(this.activeRow);
-    if (entries.length === 0) {
+    const rows = extractPrintableRowsFromTable(table);
+    if (rows.length === 0) {
       window.alert('Keine druckbaren Werte gefunden.');
       return;
     }
 
-    const printJob: PrintJob = {
-      sourceUrl: window.location.href,
-      createdAt: new Date().toISOString(),
-      entries,
-    };
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.alert('Druckfenster konnte nicht geöffnet werden.');
+      return;
+    }
 
-    await savePrintJob(printJob);
-    window.open(chrome.runtime.getURL('print.html'), '_blank', 'noopener,noreferrer');
+    this.renderPrintPreview(printWindow, rows);
+    this.startPrint(printWindow);
   }
 }

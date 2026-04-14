@@ -6,17 +6,26 @@ function createPrintButton(referenceButton: HTMLButtonElement, onClick: (event: 
   button.className = referenceButton.className;
   button.style.cssText = referenceButton.style.cssText;
   button.dataset.appRoomPrintButton = 'true';
-  button.textContent = 'Drücken';
+
+  const icon = document.createElement('i');
+  icon.className = 'fal fa-print';
+
+  button.append(icon, document.createTextNode(' Drucken'));
   button.addEventListener('click', onClick);
   return button;
 }
 
+function getToolbarAnchor() {
+  return Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+    button.textContent?.includes('Zeitachse'),
+  );
+}
+
 export function syncPrintButton(
-  menuRoot: ParentNode,
   enabled: boolean,
   onClick: (event: MouseEvent) => void,
 ) {
-  const existing = menuRoot.querySelector<HTMLButtonElement>(PRINT_BUTTON_SELECTOR);
+  const existing = document.querySelector<HTMLButtonElement>(PRINT_BUTTON_SELECTOR);
   if (!enabled) {
     existing?.remove();
     return null;
@@ -26,12 +35,12 @@ export function syncPrintButton(
     return existing;
   }
 
-  const referenceButton = menuRoot.querySelector<HTMLButtonElement>('button');
-  if (!referenceButton?.parentElement) {
+  const anchorButton = getToolbarAnchor();
+  if (!anchorButton?.parentElement) {
     return null;
   }
 
-  const button = createPrintButton(referenceButton, onClick);
-  referenceButton.insertAdjacentElement('afterend', button);
+  const button = createPrintButton(anchorButton, onClick);
+  anchorButton.insertAdjacentElement('beforebegin', button);
   return button;
 }

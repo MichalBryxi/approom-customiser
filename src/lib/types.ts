@@ -9,6 +9,8 @@ export type PrintJobEntry = {
   value: string;
 };
 
+export type PrintRow = PrintJobEntry[];
+
 export type PrintJob = {
   sourceUrl: string;
   createdAt: string;

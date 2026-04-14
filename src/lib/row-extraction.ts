@@ -1,4 +1,4 @@
-import type { PrintJobEntry } from './types';
+import type { PrintJobEntry, PrintRow } from './types';
 
 function normalizeText(value: string | null | undefined) {
   return (value ?? '').replace(/\s+/g, ' ').trim();
@@ -43,4 +43,40 @@ export function extractVisibleEntriesFromRow(row: HTMLTableRowElement): PrintJob
   }
 
   return entries;
+}
+
+function buildRowRecord(row: HTMLTableRowElement) {
+  const entries = extractVisibleEntriesFromRow(row);
+  return entries.reduce<Record<string, string>>((acc, entry) => {
+    acc[entry.key] = entry.value;
+    return acc;
+  }, {});
+}
+
+function splitRentEans(value: string) {
+  return value
+    .split(/[\s,;]+/g)
+    .map((part) => normalizeText(part))
+    .filter(Boolean);
+}
+
+export function extractPrintableRowsFromTable(table: HTMLTableElement): PrintRow[] {
+  const rows = Array.from(table.tBodies[0]?.rows ?? []).filter((row): row is HTMLTableRowElement =>
+    row instanceof HTMLTableRowElement,
+  );
+
+  return rows.flatMap((row) => {
+    const rowRecord = buildRowRecord(row);
+    const kunde = rowRecord.Kunde ?? '-';
+    const mietartikel = rowRecord.Mietartikel ?? '-';
+    const rentEans = splitRentEans(rowRecord['Rent-EAN'] ?? '');
+
+    const printableRentEans = rentEans.length > 0 ? rentEans : ['-'];
+
+    return printableRentEans.map<PrintRow>((rentEan) => [
+      { key: 'Kunde', value: kunde },
+      { key: 'Mietartikel', value: mietartikel },
+      { key: 'Rent-EAN', value: rentEan },
+    ]);
+  });
 }

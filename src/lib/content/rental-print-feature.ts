@@ -65,15 +65,45 @@ export class RentalPrintFeature {
     printWindow.document.body.style.fontFamily =
       '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     printWindow.document.body.style.fontSize = '12px';
+    const table = printWindow.document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
 
-    const preview = printWindow.document.createElement('pre');
-    preview.style.whiteSpace = 'pre-wrap';
-    preview.style.margin = '0';
-    preview.textContent = rows
-      .map((row) => row.map(({ key, value }) => `${key}: ${value}`).join(' | '))
-      .join('\n');
+    const thead = printWindow.document.createElement('thead');
+    const headerRow = printWindow.document.createElement('tr');
 
-    printWindow.document.body.append(preview);
+    for (const column of rows[0] ?? []) {
+      const th = printWindow.document.createElement('th');
+      th.textContent = column.key;
+      th.style.border = '1px solid #d1d5db';
+      th.style.padding = '10px 8px';
+      th.style.textAlign = 'left';
+      th.style.backgroundColor = '#f3f4f6';
+      headerRow.append(th);
+    }
+
+    thead.append(headerRow);
+    table.append(thead);
+
+    const tbody = printWindow.document.createElement('tbody');
+
+    for (const row of rows) {
+      const tr = printWindow.document.createElement('tr');
+
+      for (const cell of row) {
+        const td = printWindow.document.createElement('td');
+        td.textContent = cell.value;
+        td.style.border = '1px solid #d1d5db';
+        td.style.padding = '10px 8px';
+        td.style.verticalAlign = 'top';
+        tr.append(td);
+      }
+
+      tbody.append(tr);
+    }
+
+    table.append(tbody);
+    printWindow.document.body.append(table);
   }
 
   private startPrint(printWindow: Window) {

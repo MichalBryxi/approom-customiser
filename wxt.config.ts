@@ -1,10 +1,28 @@
+import { existsSync } from 'node:fs';
+import { platform } from 'node:os';
+
 import { defineConfig } from 'wxt';
+
+function getDefaultChromiumBinary() {
+  if (process.env.CHROMIUM_BIN) {
+    return process.env.CHROMIUM_BIN;
+  }
+
+  const candidates =
+    platform() === 'darwin'
+      ? ['/Applications/Chromium.app/Contents/MacOS/Chromium']
+      : ['/usr/bin/chromium', '/usr/bin/chromium-browser'];
+
+  return candidates.find((candidate) => existsSync(candidate));
+}
+
+const chromiumBinary = getDefaultChromiumBinary();
 
 export default defineConfig({
   webExt: {
-    binaries: process.env.CHROMIUM_BIN
+    binaries: chromiumBinary
       ? {
-          chromium: process.env.CHROMIUM_BIN,
+          chromium: chromiumBinary,
         }
       : undefined,
   },

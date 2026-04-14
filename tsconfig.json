@@ -1,0 +1,15 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "WebWorker"],
+    "types": ["chrome", "vitest/globals"]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.d.ts"
+  ],
+  "exclude": [
+    ".output",
+    "node_modules"
+  ]
+}

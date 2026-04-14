@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2933;
+  background: #f7f8fa;
+}
+
+.popup {
+  width: 320px;
+  padding: 16px;
+}
+
+.popup h1 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.popup__intro {
+  margin: 0 0 12px;
+  color: #52606d;
+}
+
+.popup__form {
+  display: grid;
+  gap: 10px;
+}
+
+.popup__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+}

@@ -1,0 +1,11 @@
+body {
+  margin: 24px;
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #111827;
+  background: #ffffff;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+}

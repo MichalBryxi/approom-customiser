@@ -1,6 +1,6 @@
 # App-Room ERP Enhancer
 
-Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configurable workflow helpers into the App-Room ERP rental page.
+Chromium extension for `https://erp.app-room.ch/rental/rent` that injects configurable workflow helpers into the App-Room ERP rental page.
 
 ## Current feature
 
@@ -10,7 +10,7 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 
 - WXT
 - TypeScript
-- Chrome Manifest V3
+- Chromium / Chrome Manifest V3
 - Vitest
 
 ## Local development
@@ -24,22 +24,36 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 2. Start the WXT dev workflow:
 
    ```bash
-   pnpm dev
+   CHROMIUM_BIN="/Applications/Chromium.app/Contents/MacOS/Chromium" pnpm dev
    ```
 
-   WXT builds the extension for Chrome and keeps watching for changes.
+   WXT targets `chromium` for local development. Set `CHROMIUM_BIN` to your local Chromium executable so WXT opens Chromium instead of falling back to Chrome.
 
-3. Or create a normal production build:
+   On Linux, this is often one of:
+
+   ```bash
+   CHROMIUM_BIN="/usr/bin/chromium" pnpm dev
+   CHROMIUM_BIN="/usr/bin/chromium-browser" pnpm dev
+   ```
+
+3. Or create a Chromium-targeted build output:
+
+   ```bash
+   pnpm build:chromium
+   ```
+
+4. For Chrome Web Store packaging, keep using the Chrome-family build:
 
    ```bash
    pnpm build
    ```
 
-4. Open `chrome://extensions`.
-5. Enable `Developer mode`.
-6. Click `Load unpacked`.
-7. Select `.output/chrome-mv3`.
-8. After rebuilding, click the extension's `Reload` button in `chrome://extensions`.
+5. Open the Extensions page in Chromium with `chrome://extensions`.
+6. Enable `Developer mode`.
+7. Click `Load unpacked`.
+8. Select `.output/chromium-mv3` when using `pnpm dev` or `pnpm build:chromium`.
+9. Select `.output/chrome-mv3` when using `pnpm build`.
+10. After rebuilding, click the extension's `Reload` button in the Extensions page.
 
 ## Testing
 
@@ -52,13 +66,19 @@ pnpm test
 ## Packaging for the Chrome Web Store
 
 1. Increase the version in `package.json`.
-2. Build the ZIP package:
+2. Build the Chrome Web Store ZIP package:
 
    ```bash
    pnpm zip
    ```
 
 3. Upload the generated archive from `.output/*/*.zip` to the Chrome Web Store dashboard.
+
+If you want a Chromium-named ZIP for side-loading or non-store distribution:
+
+```bash
+pnpm zip:chromium
+```
 
 Optional WXT submit helpers:
 

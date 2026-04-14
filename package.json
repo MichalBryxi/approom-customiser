@@ -5,7 +5,10 @@
   "type": "module",
   "packageManager": "pnpm@10.26.2",
   "scripts": {
-    "dev": "wxt --browser chrome",
+    "dev": "wxt --browser chromium",
+    "dev:chrome": "wxt --browser chrome",
+    "build:chromium": "wxt build --browser chromium",
+    "zip:chromium": "wxt zip --browser chromium",
     "build": "wxt build --browser chrome",
     "zip": "wxt zip --browser chrome",
     "clean": "wxt clean",

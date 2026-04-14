@@ -69,22 +69,6 @@ export class RentalPrintFeature {
     table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
 
-    const thead = printWindow.document.createElement('thead');
-    const headerRow = printWindow.document.createElement('tr');
-
-    for (const column of rows[0] ?? []) {
-      const th = printWindow.document.createElement('th');
-      th.textContent = column.key;
-      th.style.border = '1px solid #d1d5db';
-      th.style.padding = '10px 8px';
-      th.style.textAlign = 'left';
-      th.style.backgroundColor = '#f3f4f6';
-      headerRow.append(th);
-    }
-
-    thead.append(headerRow);
-    table.append(thead);
-
     const tbody = printWindow.document.createElement('tbody');
 
     for (const row of rows) {
@@ -94,7 +78,7 @@ export class RentalPrintFeature {
         const td = printWindow.document.createElement('td');
         td.textContent = cell.value;
         td.style.border = '1px solid #d1d5db';
-        td.style.padding = '10px 8px';
+        td.style.padding = '16px 8px';
         td.style.verticalAlign = 'top';
         tr.append(td);
       }

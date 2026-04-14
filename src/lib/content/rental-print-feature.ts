@@ -80,6 +80,11 @@ export class RentalPrintFeature {
         td.style.border = '1px solid #d1d5db';
         td.style.padding = '16px 8px';
         td.style.verticalAlign = 'top';
+        td.style.whiteSpace = 'normal';
+        td.style.overflow = 'visible';
+        td.style.textOverflow = 'clip';
+        td.style.wordBreak = 'break-word';
+        td.style.overflowWrap = 'anywhere';
         tr.append(td);
       }
 

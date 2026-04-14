@@ -18,13 +18,13 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 1. Install dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. Start the WXT dev workflow:
 
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
    WXT builds the extension for Chrome and keeps watching for changes.
@@ -32,7 +32,7 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 3. Or create a normal production build:
 
    ```bash
-   npm run build
+   pnpm build
    ```
 
 4. Open `chrome://extensions`.
@@ -46,7 +46,7 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 Run unit tests with:
 
 ```bash
-npm test
+pnpm test
 ```
 
 ## Packaging for the Chrome Web Store
@@ -55,7 +55,7 @@ npm test
 2. Build the ZIP package:
 
    ```bash
-   npm run zip
+   pnpm zip
    ```
 
 3. Upload the generated archive from `.output/*/*.zip` to the Chrome Web Store dashboard.
@@ -63,8 +63,8 @@ npm test
 Optional WXT submit helpers:
 
 ```bash
-npm run submit:init
-npm run submit
+pnpm submit:init
+pnpm submit
 ```
 
 ## Manual verification checklist

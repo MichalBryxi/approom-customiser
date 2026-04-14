@@ -80,11 +80,6 @@ export class RentalPrintFeature {
         td.style.border = '1px solid #d1d5db';
         td.style.padding = '16px 8px';
         td.style.verticalAlign = 'top';
-        td.style.whiteSpace = 'normal';
-        td.style.overflow = 'visible';
-        td.style.textOverflow = 'clip';
-        td.style.wordBreak = 'break-word';
-        td.style.overflowWrap = 'anywhere';
         tr.append(td);
       }
 
@@ -110,12 +105,44 @@ export class RentalPrintFeature {
     }, 50);
   }
 
+  private waitForUiUpdate() {
+    return new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 150);
+    });
+  }
+
+  private getExpandButton(row: HTMLTableRowElement) {
+    return row.querySelector<HTMLButtonElement>('td:nth-child(14) button');
+  }
+
+  private isCollapsedExpandButton(button: HTMLButtonElement) {
+    return button.querySelector('i.fa-chevron-down') !== null;
+  }
+
+  private async expandRowsForPrint(table: HTMLTableElement) {
+    const rows = Array.from(table.tBodies[0]?.rows ?? []).filter((row): row is HTMLTableRowElement =>
+      row instanceof HTMLTableRowElement,
+    );
+
+    for (const row of rows) {
+      const expandButton = this.getExpandButton(row);
+      if (!expandButton || !this.isCollapsedExpandButton(expandButton)) {
+        continue;
+      }
+
+      expandButton.click();
+      await this.waitForUiUpdate();
+    }
+  }
+
   private async handlePrintClick() {
     const table = document.querySelector<HTMLTableElement>('table');
     if (!table) {
       window.alert('Keine Tabelle gefunden.');
       return;
     }
+
+    await this.expandRowsForPrint(table);
 
     const rows = extractPrintableRowsFromTable(table);
     if (rows.length === 0) {

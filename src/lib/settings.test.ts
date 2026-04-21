@@ -24,7 +24,11 @@ function createStorageArea(initialValues: Record<string, unknown> = {}) {
 
 describe('settings', () => {
   it('fills in missing defaults without overwriting existing values', async () => {
-    const sync = createStorageArea({ rentalPrintButton: false, barcodeCheckIn: false });
+    const sync = createStorageArea({
+      rentalPrintButton: false,
+      barcodeCheckIn: false,
+      checkInQuantityWarning: false,
+    });
     globalThis.chrome = {
       storage: {
         sync,
@@ -32,7 +36,11 @@ describe('settings', () => {
     } as typeof chrome;
 
     await ensureDefaultSettings();
-    expect(sync.snapshot()).toEqual({ rentalPrintButton: false, barcodeCheckIn: false });
+    expect(sync.snapshot()).toEqual({
+      rentalPrintButton: false,
+      barcodeCheckIn: false,
+      checkInQuantityWarning: false,
+    });
   });
 
   it('returns defaults when storage is empty', async () => {

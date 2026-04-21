@@ -1,4 +1,5 @@
 import { BarcodeCheckInController } from './barcode-check-in-controller';
+import { StorageOrderWarningController } from './storage-order-warning-controller';
 import { getSettings } from '../settings';
 import type { ExtensionSettings } from '../types';
 
@@ -8,6 +9,8 @@ export class StorageOrderBarcodeFeature {
   private observer: MutationObserver | null = null;
 
   private controller = new BarcodeCheckInController();
+
+  private warningController = new StorageOrderWarningController();
 
   start() {
     void this.initialize();
@@ -38,10 +41,15 @@ export class StorageOrderBarcodeFeature {
       return;
     }
 
-    if (changes.barcodeCheckIn) {
+    if (changes.barcodeCheckIn || changes.checkInQuantityWarning) {
       this.settings = {
         ...this.settings,
-        barcodeCheckIn: Boolean(changes.barcodeCheckIn.newValue),
+        ...(changes.barcodeCheckIn
+          ? { barcodeCheckIn: Boolean(changes.barcodeCheckIn.newValue) }
+          : {}),
+        ...(changes.checkInQuantityWarning
+          ? { checkInQuantityWarning: Boolean(changes.checkInQuantityWarning.newValue) }
+          : {}),
       };
       this.syncPageControls();
     }
@@ -53,5 +61,6 @@ export class StorageOrderBarcodeFeature {
     }
 
     this.controller.sync(this.settings.barcodeCheckIn);
+    this.warningController.sync(this.settings.checkInQuantityWarning);
   }
 }

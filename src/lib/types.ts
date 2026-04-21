@@ -1,8 +1,9 @@
-export type FeatureId = 'rentalPrintButton' | 'barcodeCheckIn';
+export type FeatureId = 'rentalPrintButton' | 'barcodeCheckIn' | 'checkInQuantityWarning';
 
 export type ExtensionSettings = {
   rentalPrintButton: boolean;
   barcodeCheckIn: boolean;
+  checkInQuantityWarning: boolean;
 };
 
 export type PrintJobEntry = {

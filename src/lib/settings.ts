@@ -3,6 +3,7 @@ import type { ExtensionSettings, FeatureId } from './types';
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalPrintButton: true,
   barcodeCheckIn: true,
+  checkInQuantityWarning: true,
 };
 
 export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string }> = [
@@ -13,6 +14,10 @@ export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string }> = [
   {
     id: 'barcodeCheckIn',
     label: 'Per Barcode einbuchen',
+  },
+  {
+    id: 'checkInQuantityWarning',
+    label: 'Warnung bei zu kleiner Einbuchmenge',
   },
 ];
 

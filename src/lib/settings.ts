@@ -4,6 +4,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalPrintButton: true,
   barcodeCheckIn: true,
   checkInQuantityWarning: true,
+  printLabelsByCheckInQuantity: true,
 };
 
 export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string }> = [
@@ -18,6 +19,10 @@ export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string }> = [
   {
     id: 'checkInQuantityWarning',
     label: 'Warnung bei zu kleiner Einbuchmenge',
+  },
+  {
+    id: 'printLabelsByCheckInQuantity',
+    label: 'Etiketten nach Einbuchmenge drucken',
   },
 ];
 

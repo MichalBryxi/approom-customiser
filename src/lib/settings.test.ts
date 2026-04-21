@@ -28,6 +28,7 @@ describe('settings', () => {
       rentalPrintButton: false,
       barcodeCheckIn: false,
       checkInQuantityWarning: false,
+      printLabelsByCheckInQuantity: false,
     });
     globalThis.chrome = {
       storage: {
@@ -40,6 +41,7 @@ describe('settings', () => {
       rentalPrintButton: false,
       barcodeCheckIn: false,
       checkInQuantityWarning: false,
+      printLabelsByCheckInQuantity: false,
     });
   });
 

@@ -1,4 +1,5 @@
 import { BarcodeCheckInController } from './barcode-check-in-controller';
+import { StorageOrderLabelPrintController } from './storage-order-label-print-controller';
 import { StorageOrderWarningController } from './storage-order-warning-controller';
 import { getSettings } from '../settings';
 import type { ExtensionSettings } from '../types';
@@ -11,6 +12,8 @@ export class StorageOrderBarcodeFeature {
   private controller = new BarcodeCheckInController();
 
   private warningController = new StorageOrderWarningController();
+
+  private labelPrintController = new StorageOrderLabelPrintController();
 
   start() {
     void this.initialize();
@@ -41,7 +44,11 @@ export class StorageOrderBarcodeFeature {
       return;
     }
 
-    if (changes.barcodeCheckIn || changes.checkInQuantityWarning) {
+    if (
+      changes.barcodeCheckIn ||
+      changes.checkInQuantityWarning ||
+      changes.printLabelsByCheckInQuantity
+    ) {
       this.settings = {
         ...this.settings,
         ...(changes.barcodeCheckIn
@@ -49,6 +56,13 @@ export class StorageOrderBarcodeFeature {
           : {}),
         ...(changes.checkInQuantityWarning
           ? { checkInQuantityWarning: Boolean(changes.checkInQuantityWarning.newValue) }
+          : {}),
+        ...(changes.printLabelsByCheckInQuantity
+          ? {
+              printLabelsByCheckInQuantity: Boolean(
+                changes.printLabelsByCheckInQuantity.newValue,
+              ),
+            }
           : {}),
       };
       this.syncPageControls();
@@ -62,5 +76,6 @@ export class StorageOrderBarcodeFeature {
 
     this.controller.sync(this.settings.barcodeCheckIn);
     this.warningController.sync(this.settings.checkInQuantityWarning);
+    this.labelPrintController.sync(this.settings.printLabelsByCheckInQuantity);
   }
 }

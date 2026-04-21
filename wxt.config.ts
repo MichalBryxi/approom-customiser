@@ -20,6 +20,7 @@ const chromiumBinary = getDefaultChromiumBinary();
 
 export default defineConfig({
   outDir: 'build',
+  startUrls: ['https://erp.app-room.ch/rental/rent'],
   webExt: {
     binaries: chromiumBinary
       ? {
@@ -31,7 +32,10 @@ export default defineConfig({
     name: 'App-Room ERP Enhancer',
     description: 'Enhances the App-Room ERP rental page with configurable workflow helpers.',
     permissions: ['storage'],
-    host_permissions: ['https://erp.app-room.ch/rental/*'],
+    host_permissions: [
+      'https://erp.app-room.ch/rental/*',
+      'https://erp.app-room.ch/org/storage/*',
+    ],
     action: {
       default_title: 'App-Room ERP Enhancer',
       default_popup: 'popup.html',

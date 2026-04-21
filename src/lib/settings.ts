@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string }> = [
   {
     id: 'rentalPrintButton',
-    label: 'Enable rental print button',
+    label: 'Rental-Druckbutton',
   },
 ];
 

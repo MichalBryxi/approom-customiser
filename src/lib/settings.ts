@@ -9,22 +9,30 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   printLabelsByCheckInQuantity: true,
 };
 
-export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string }> = [
+export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string; description: string }> = [
   {
     id: 'rentalPrintButton',
     label: 'Rental-Druckbutton',
+    description:
+      'Fügt in Mietansichten einen Druckbutton hinzu, um sichtbare Zeilendetails schnell zu drucken.',
   },
   {
     id: 'barcodeCheckIn',
     label: 'Per Barcode einbuchen',
+    description:
+      'Fügt der aktuellen Bestellung eine Barcode-Eingabe hinzu, die passende Artikel beim Scannen hochzählt.',
   },
   {
     id: 'checkInQuantityWarning',
     label: 'Warnung bei zu kleiner Einbuchmenge',
+    description:
+      'Markiert Zeilen rot, wenn Eingebucht + Einbuchen kleiner als Bestellt ist; grün, wenn die Menge genau aufgeht. Bereits vollständig eingebuchte Zeilen bleiben unmarkiert.',
   },
   {
     id: 'printLabelsByCheckInQuantity',
     label: 'Etiketten nach Einbuchmenge drucken',
+    description:
+      'Übernimmt beim Öffnen des Etikettendrucks die aktuelle Anzahl einbuchen als Druckmenge.',
   },
 ];
 

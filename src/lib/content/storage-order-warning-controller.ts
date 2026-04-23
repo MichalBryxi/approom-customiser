@@ -1,5 +1,7 @@
 const WARNING_ROW_ATTRIBUTE = 'data-app-room-check-in-warning';
-const WARNING_COLOR = '#f8d7da';
+const COMPLETE_ROW_ATTRIBUTE = 'data-app-room-check-in-complete';
+const WARNING_COLOR = '#fff3cd';
+const COMPLETE_COLOR = '#d4edda';
 
 function normalizeText(value: string | null | undefined) {
   return (value ?? '').replace(/\s+/g, ' ').trim();
@@ -10,12 +12,16 @@ function parseNumericInputValue(input: HTMLInputElement | null) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function setRowWarningState(row: HTMLTableRowElement, enabled: boolean) {
-  row.toggleAttribute(WARNING_ROW_ATTRIBUTE, enabled);
-  row.style.backgroundColor = enabled ? WARNING_COLOR : '';
+function setRowState(row: HTMLTableRowElement, state: 'warning' | 'complete' | 'clear') {
+  const color =
+    state === 'warning' ? WARNING_COLOR : state === 'complete' ? COMPLETE_COLOR : '';
+
+  row.toggleAttribute(WARNING_ROW_ATTRIBUTE, state === 'warning');
+  row.toggleAttribute(COMPLETE_ROW_ATTRIBUTE, state === 'complete');
+  row.style.backgroundColor = color;
 
   Array.from(row.cells).forEach((cell) => {
-    cell.style.backgroundColor = enabled ? WARNING_COLOR : '';
+    cell.style.backgroundColor = color;
   });
 }
 
@@ -67,9 +73,11 @@ export class StorageOrderWarningController {
 
   private clearAllWarnings() {
     document
-      .querySelectorAll<HTMLTableRowElement>(`#bestell_artikel tbody tr[${WARNING_ROW_ATTRIBUTE}]`)
+      .querySelectorAll<HTMLTableRowElement>(
+        `#bestell_artikel tbody tr[${WARNING_ROW_ATTRIBUTE}], #bestell_artikel tbody tr[${COMPLETE_ROW_ATTRIBUTE}]`,
+      )
       .forEach((row) => {
-        setRowWarningState(row, false);
+        setRowState(row, 'clear');
       });
   }
 
@@ -103,8 +111,24 @@ export class StorageOrderWarningController {
       const ordered = parseNumericInputValue(this.getInputFromColumn(row, orderedColumnIndex));
       const checkedIn = parseNumericInputValue(this.getInputFromColumn(row, checkedInColumnIndex));
       const pending = parseNumericInputValue(this.getInputFromColumn(row, pendingColumnIndex));
+      const totalAfterCheckIn = checkedIn + pending;
 
-      setRowWarningState(row, pending < ordered + checkedIn);
+      if (checkedIn >= ordered) {
+        setRowState(row, 'clear');
+        return;
+      }
+
+      if (totalAfterCheckIn < ordered) {
+        setRowState(row, 'warning');
+        return;
+      }
+
+      if (totalAfterCheckIn === ordered) {
+        setRowState(row, 'complete');
+        return;
+      }
+
+      setRowState(row, 'clear');
     });
   }
 }

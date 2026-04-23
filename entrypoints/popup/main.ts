@@ -1,15 +1,42 @@
 import {
   DEFAULT_SETTINGS,
   FEATURE_DEFINITIONS,
+  FEATURE_SETTING_GROUPS,
   getSettings,
   updateSetting,
 } from '../../src/lib/settings';
+import type { FeatureDescriptionPart } from '../../src/lib/settings';
 import type { ExtensionSettings } from '../../src/lib/types';
+
+function appendTooltipDescription(
+  tooltip: HTMLElement,
+  description: string,
+  descriptionParts?: FeatureDescriptionPart[],
+) {
+  if (!descriptionParts) {
+    tooltip.textContent = description;
+    return;
+  }
+
+  for (const part of descriptionParts) {
+    if (typeof part === 'string') {
+      tooltip.append(document.createTextNode(part));
+      continue;
+    }
+
+    const mark = document.createElement('span');
+    mark.className = 'popup__tooltip-mark';
+    mark.style.backgroundColor = part.backgroundColor;
+    mark.textContent = part.text;
+    tooltip.append(mark);
+  }
+}
 
 function createToggle(
   featureId: keyof ExtensionSettings,
   label: string,
   description: string,
+  descriptionParts: FeatureDescriptionPart[] | undefined,
   checked: boolean,
 ) {
   const wrapper = document.createElement('label');
@@ -33,11 +60,27 @@ function createToggle(
 
   const tooltip = document.createElement('span');
   tooltip.className = 'popup__tooltip';
-  tooltip.textContent = description;
+  appendTooltipDescription(tooltip, description, descriptionParts);
   help.append(tooltip);
 
   wrapper.append(input, text, help);
   return { wrapper, input };
+}
+
+function createSettingGroup(breadcrumb: string) {
+  const group = document.createElement('details');
+  group.className = 'popup__group';
+  group.open = true;
+
+  const summary = document.createElement('summary');
+  summary.className = 'popup__group-summary';
+  summary.textContent = breadcrumb;
+
+  const body = document.createElement('div');
+  body.className = 'popup__group-body';
+
+  group.append(summary, body);
+  return { group, body };
 }
 
 function showPopupError(message: string) {
@@ -67,20 +110,35 @@ async function renderPopup() {
     const settings = await getSettings();
     form.replaceChildren();
 
-    for (const feature of FEATURE_DEFINITIONS) {
-      const initialValue = settings[feature.id] ?? DEFAULT_SETTINGS[feature.id];
-      const { wrapper, input } = createToggle(
-        feature.id,
-        feature.label,
-        feature.description,
-        initialValue,
+    for (const settingGroup of FEATURE_SETTING_GROUPS) {
+      const groupFeatures = FEATURE_DEFINITIONS.filter(
+        (feature) => feature.groupId === settingGroup.id,
       );
 
-      input.addEventListener('change', () => {
-        void updateSetting(feature.id, input.checked);
-      });
+      if (groupFeatures.length === 0) {
+        continue;
+      }
 
-      form.append(wrapper);
+      const { group, body } = createSettingGroup(settingGroup.breadcrumb);
+
+      for (const feature of groupFeatures) {
+        const initialValue = settings[feature.id] ?? DEFAULT_SETTINGS[feature.id];
+        const { wrapper, input } = createToggle(
+          feature.id,
+          feature.label,
+          feature.description,
+          feature.descriptionParts,
+          initialValue,
+        );
+
+        input.addEventListener('change', () => {
+          void updateSetting(feature.id, input.checked);
+        });
+
+        body.append(wrapper);
+      }
+
+      form.append(group);
     }
 
     console.info('🦊 Popup render completed.', {

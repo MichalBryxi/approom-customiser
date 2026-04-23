@@ -1,6 +1,35 @@
 import { storage } from 'wxt/utils/storage';
 
+import { CHECK_IN_STATUS_COLORS } from './check-in-status-colors';
 import type { ExtensionSettings, FeatureId } from './types';
+
+export type FeatureDescriptionPart =
+  | string
+  | {
+      text: string;
+      backgroundColor: string;
+    };
+
+type FeatureDefinition = {
+  id: FeatureId;
+  groupId: FeatureSettingGroupId;
+  label: string;
+  description: string;
+  descriptionParts?: FeatureDescriptionPart[];
+};
+
+export const FEATURE_SETTING_GROUPS = [
+  {
+    id: 'rental-rent',
+    breadcrumb: 'Vermietung > Mietauftrag > Zeitachse',
+  },
+  {
+    id: 'storage-order',
+    breadcrumb: 'Lager > Bestellung > Aktuelle Bestellung',
+  },
+] as const;
+
+export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalPrintButton: true,
@@ -9,27 +38,44 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   printLabelsByCheckInQuantity: true,
 };
 
-export const FEATURE_DEFINITIONS: Array<{ id: FeatureId; label: string; description: string }> = [
+export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   {
     id: 'rentalPrintButton',
+    groupId: 'rental-rent',
     label: 'Rental-Druckbutton',
     description:
       'Fügt in Mietansichten einen Druckbutton hinzu, um sichtbare Zeilendetails schnell zu drucken.',
   },
   {
     id: 'barcodeCheckIn',
+    groupId: 'storage-order',
     label: 'Per Barcode einbuchen',
     description:
       'Fügt der aktuellen Bestellung eine Barcode-Eingabe hinzu, die passende Artikel beim Scannen hochzählt.',
   },
   {
     id: 'checkInQuantityWarning',
+    groupId: 'storage-order',
     label: 'Warnung bei zu kleiner Einbuchmenge',
     description:
-      'Markiert Zeilen rot, wenn Eingebucht + Einbuchen kleiner als Bestellt ist; grün, wenn die Menge genau aufgeht. Bereits vollständig eingebuchte Zeilen bleiben unmarkiert.',
+      'Markiert Zeilen nach Einbuchstatus: Eingebucht + Einbuchen kleiner als Bestellt, oder Eingebucht + Einbuchen gleich Bestellt. Bereits vollständig eingebuchte Zeilen bleiben unmarkiert.',
+    descriptionParts: [
+      'Markiert Zeilen nach Einbuchstatus: ',
+      {
+        text: 'Eingebucht + Einbuchen < Bestellt',
+        backgroundColor: CHECK_IN_STATUS_COLORS.warning,
+      },
+      ', oder ',
+      {
+        text: 'Eingebucht + Einbuchen = Bestellt',
+        backgroundColor: CHECK_IN_STATUS_COLORS.complete,
+      },
+      '. Bereits vollständig eingebuchte Zeilen bleiben unmarkiert.',
+    ],
   },
   {
     id: 'printLabelsByCheckInQuantity',
+    groupId: 'storage-order',
     label: 'Etiketten nach Einbuchmenge drucken',
     description:
       'Übernimmt beim Öffnen des Etikettendrucks die aktuelle Anzahl einbuchen als Druckmenge.',

@@ -1,7 +1,7 @@
+import { CHECK_IN_STATUS_COLORS } from '../check-in-status-colors';
+
 const WARNING_ROW_ATTRIBUTE = 'data-app-room-check-in-warning';
 const COMPLETE_ROW_ATTRIBUTE = 'data-app-room-check-in-complete';
-const WARNING_COLOR = '#fff3cd';
-const COMPLETE_COLOR = '#d4edda';
 
 function normalizeText(value: string | null | undefined) {
   return (value ?? '').replace(/\s+/g, ' ').trim();
@@ -14,7 +14,11 @@ function parseNumericInputValue(input: HTMLInputElement | null) {
 
 function setRowState(row: HTMLTableRowElement, state: 'warning' | 'complete' | 'clear') {
   const color =
-    state === 'warning' ? WARNING_COLOR : state === 'complete' ? COMPLETE_COLOR : '';
+    state === 'warning'
+      ? CHECK_IN_STATUS_COLORS.warning
+      : state === 'complete'
+        ? CHECK_IN_STATUS_COLORS.complete
+        : '';
 
   row.toggleAttribute(WARNING_ROW_ATTRIBUTE, state === 'warning');
   row.toggleAttribute(COMPLETE_ROW_ATTRIBUTE, state === 'complete');

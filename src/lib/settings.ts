@@ -21,11 +21,11 @@ type FeatureDefinition = {
 export const FEATURE_SETTING_GROUPS = [
   {
     id: 'rental-rent',
-    breadcrumb: 'Vermietung > Mietauftrag > Zeitachse',
+    breadcrumb: 'Rental > Vermietungen',
   },
   {
     id: 'storage-order',
-    breadcrumb: 'Lager > Bestellung > Aktuelle Bestellung',
+    breadcrumb: 'Lager > Lagerbestellung > Bleistift',
   },
 ] as const;
 

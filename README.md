@@ -27,7 +27,7 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
    pnpm dev
    ```
 
-   `pnpm dev` targets Chromium and should launch Chromium instead of Chrome. By default the repo looks for `/Applications/Chromium.app/Contents/MacOS/Chromium` on macOS and common Chromium paths on Linux.
+   `pnpm dev` targets Chromium, should launch Chromium instead of Chrome, and opens `https://erp.app-room.ch/rental/rent` automatically. By default the repo looks for `/Applications/Chromium.app/Contents/MacOS/Chromium` on macOS and common Chromium paths on Linux.
 
    If your Chromium binary lives elsewhere, override it explicitly:
 

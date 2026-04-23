@@ -1,22 +1,12 @@
 import { defineContentScript } from '#imports';
+import { CONTENT_FEATURES } from '../src/lib/content/feature-config';
+import { ContentFeatureRuntime } from '../src/lib/content/feature-runtime';
 
 export default defineContentScript({
-  matches: ['https://erp.app-room.ch/rental/*', 'https://erp.app-room.ch/org/storage/*'],
+  matches: ['https://erp.app-room.ch/*'],
   runAt: 'document_idle',
-  async main() {
-    if (window.location.pathname === '/rental/rent') {
-      const { RentalPrintFeature } = await import('../src/lib/content/rental-print-feature');
-      const feature = new RentalPrintFeature();
-      feature.start();
-      return;
-    }
-
-    if (window.location.pathname === '/org/storage/order') {
-      const { StorageOrderBarcodeFeature } = await import(
-        '../src/lib/content/storage-order-barcode-feature'
-      );
-      const feature = new StorageOrderBarcodeFeature();
-      feature.start();
-    }
+  main() {
+    const runtime = new ContentFeatureRuntime(CONTENT_FEATURES);
+    runtime.start();
   },
 });

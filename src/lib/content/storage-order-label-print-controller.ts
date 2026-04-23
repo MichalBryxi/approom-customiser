@@ -1,3 +1,5 @@
+import { logErpDebug } from './feature-activation-log';
+
 type PrintQuantitySnapshot = Array<{
   artId: string;
   quantity: string;
@@ -28,9 +30,9 @@ function setInputValue(input: HTMLInputElement, value: string) {
 export class StorageOrderLabelPrintController {
   private boundButton: HTMLButtonElement | null = null;
 
-  private modalObserver: MutationObserver | null = null;
+  private applyInterval: number | null = null;
 
-  private applyTimeout: number | null = null;
+  private applyDeadlineTimeout: number | null = null;
 
   private pendingSnapshot: PrintQuantitySnapshot | null = null;
 
@@ -51,6 +53,7 @@ export class StorageOrderLabelPrintController {
 
   private readonly handleButtonClick = () => {
     this.pendingSnapshot = this.capturePrintQuantitySnapshot();
+    logErpDebug('Label print snapshot captured:', this.pendingSnapshot);
     this.scheduleModalApply();
   };
 
@@ -74,14 +77,18 @@ export class StorageOrderLabelPrintController {
   }
 
   private clearPendingApply() {
-    if (this.modalObserver) {
-      this.modalObserver.disconnect();
-      this.modalObserver = null;
+    if (this.applyInterval !== null) {
+      if (typeof window !== 'undefined') {
+        window.clearInterval(this.applyInterval);
+      }
+      this.applyInterval = null;
     }
 
-    if (this.applyTimeout !== null) {
-      window.clearTimeout(this.applyTimeout);
-      this.applyTimeout = null;
+    if (this.applyDeadlineTimeout !== null) {
+      if (typeof window !== 'undefined') {
+        window.clearTimeout(this.applyDeadlineTimeout);
+      }
+      this.applyDeadlineTimeout = null;
     }
 
     this.pendingSnapshot = null;
@@ -130,30 +137,23 @@ export class StorageOrderLabelPrintController {
       return;
     }
 
-    if (this.tryApplyPendingSnapshot()) {
-      return;
+    this.tryApplyPendingSnapshot();
+
+    if (this.applyInterval !== null) {
+      window.clearInterval(this.applyInterval);
     }
 
-    if (this.modalObserver) {
-      this.modalObserver.disconnect();
-    }
-
-    this.modalObserver = new MutationObserver(() => {
+    this.applyInterval = window.setInterval(() => {
       this.tryApplyPendingSnapshot();
-    });
+    }, 100);
 
-    this.modalObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    if (this.applyTimeout !== null) {
-      window.clearTimeout(this.applyTimeout);
+    if (this.applyDeadlineTimeout !== null) {
+      window.clearTimeout(this.applyDeadlineTimeout);
     }
 
-    this.applyTimeout = window.setTimeout(() => {
+    this.applyDeadlineTimeout = window.setTimeout(() => {
       this.clearPendingApply();
-    }, 3000);
+    }, 2000);
   }
 
   private tryApplyPendingSnapshot() {
@@ -161,9 +161,15 @@ export class StorageOrderLabelPrintController {
       return false;
     }
 
+    if (typeof document === 'undefined' || !document.body) {
+      this.clearPendingApply();
+      return false;
+    }
+
     const modal = document.querySelector<HTMLElement>('#myModal');
     const printRows = Array.from(modal?.querySelectorAll<HTMLElement>('.dd-item.row') ?? []);
     if (!modal || printRows.length === 0) {
+      logErpDebug('Label print sync waiting for modal rows.');
       return false;
     }
 
@@ -175,22 +181,43 @@ export class StorageOrderLabelPrintController {
       );
       const printCountInput = row.querySelector<HTMLInputElement>('.print_count');
       if (!artId || !printCountInput) {
+        logErpDebug('Label print sync skipped row without art_id or print_count.', {
+          artId,
+          hasPrintCountInput: Boolean(printCountInput),
+        });
         continue;
       }
 
       const quantities = printQueue.get(artId);
       const nextQuantity = quantities?.shift();
       if (typeof nextQuantity === 'undefined') {
+        logErpDebug('Label print sync found no captured quantity for modal row.', {
+          artId,
+          currentModalValue: printCountInput.value,
+        });
         continue;
       }
 
+      logErpDebug('Label print sync applying quantity.', {
+        artId,
+        previousModalValue: printCountInput.value,
+        nextQuantity,
+      });
       setInputValue(printCountInput, nextQuantity);
       if (quantities && quantities.length === 0) {
         printQueue.delete(artId);
       }
     }
 
-    this.clearPendingApply();
+    if (printQueue.size > 0) {
+      logErpDebug('Label print sync had unmatched captured quantities left over.', {
+        unmatched: Array.from(printQueue.entries()).map(([artId, quantities]) => ({
+          artId,
+          quantities,
+        })),
+      });
+    }
+
     return true;
   }
 }

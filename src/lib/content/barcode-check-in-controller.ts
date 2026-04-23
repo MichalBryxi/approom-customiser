@@ -3,6 +3,7 @@ const START_BUTTON_SELECTOR = '[data-app-room-barcode-check-in-start="true"]';
 const ACTIVE_CONTROLS_SELECTOR = '[data-app-room-barcode-check-in-active="true"]';
 const INPUT_SELECTOR = '[data-app-room-barcode-check-in-input="true"]';
 const SCAN_DELAY_MS = 500;
+const CURRENT_ORDER_HEADING_ID = 'panel_current_order_step2';
 
 function normalizeText(value: string | null | undefined) {
   return (value ?? '').replace(/\s+/g, ' ').trim();
@@ -29,6 +30,23 @@ function isEditableInput(input: HTMLInputElement | null) {
   return Boolean(input) && !input.readOnly && !input.disabled;
 }
 
+function isCurrentOrderHeading(element: HTMLElement | null | undefined) {
+  return Boolean(element) && normalizeText(element?.textContent).includes('Aktuelle Bestellung ID');
+}
+
+function getCurrentOrderHeading() {
+  const headingById = document.getElementById(CURRENT_ORDER_HEADING_ID);
+  if (headingById instanceof HTMLElement && isCurrentOrderHeading(headingById)) {
+    return headingById;
+  }
+
+  return (
+    Array.from(document.querySelectorAll<HTMLElement>('.panel-heading.hbuilt')).find(
+      isCurrentOrderHeading,
+    ) ?? null
+  );
+}
+
 export class BarcodeCheckInController {
   private sessionActive = false;
 
@@ -41,12 +59,12 @@ export class BarcodeCheckInController {
       return;
     }
 
-    const panel = document.querySelector<HTMLElement>('#panel_current_order_step4');
-    if (!panel) {
+    const mountTarget = getCurrentOrderHeading();
+    if (!mountTarget) {
       return;
     }
 
-    const root = this.ensureControls(panel);
+    const root = this.ensureControls(mountTarget);
     this.updateMode(root);
   }
 
@@ -66,19 +84,29 @@ export class BarcodeCheckInController {
     document.querySelectorAll<HTMLElement>(ROOT_SELECTOR).forEach((element) => element.remove());
   }
 
-  private ensureControls(panel: HTMLElement) {
-    const existing = panel.querySelector<HTMLDivElement>(ROOT_SELECTOR);
+  private ensureControls(mountTarget: HTMLElement) {
+    const [existing, ...duplicates] = Array.from(
+      document.querySelectorAll<HTMLDivElement>(ROOT_SELECTOR),
+    );
+
+    duplicates.forEach((element) => element.remove());
+
     if (existing) {
+      if (existing.parentElement !== mountTarget) {
+        mountTarget.append(existing);
+      }
+
       return existing;
     }
 
     const root = document.createElement('div');
     root.dataset.appRoomBarcodeCheckIn = 'true';
-    root.style.display = 'flex';
+    root.style.display = 'inline-flex';
     root.style.alignItems = 'center';
     root.style.flexWrap = 'wrap';
     root.style.gap = '8px';
-    root.style.margin = '12px 0';
+    root.style.margin = '0 0 0 12px';
+    root.style.verticalAlign = 'middle';
 
     const startButton = document.createElement('button');
     startButton.type = 'button';
@@ -116,7 +144,7 @@ export class BarcodeCheckInController {
 
     activeControls.append(input, confirmButton);
     root.append(startButton, activeControls);
-    panel.prepend(root);
+    mountTarget.append(root);
     return root;
   }
 

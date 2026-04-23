@@ -2,9 +2,20 @@ import { vi } from 'vitest';
 
 import { BarcodeCheckInController } from './barcode-check-in-controller';
 
-function buildOrderPage() {
+function currentOrderHeadingHtml() {
+  return `
+    <div class="panel-heading hbuilt" id="panel_current_order_step2">
+      <div class="panel-tools" id="panel_current_order_step3">
+        <a class="showhide"><i class="fa fa-chevron-up"></i></a>
+      </div>
+      &nbsp;Aktuelle Bestellung ID : 313
+    </div>
+  `;
+}
+
+function buildOrderPage({ includeHeading = true } = {}) {
   document.body.innerHTML = `
-    <div id="panel_current_order_step4"></div>
+    ${includeHeading ? currentOrderHeadingHtml() : ''}
     <table id="bestell_artikel" class="table table-condensed table-block">
       <thead>
         <tr>
@@ -75,6 +86,25 @@ describe('BarcodeCheckInController', () => {
       document.querySelector<HTMLElement>('[data-app-room-barcode-check-in-active="true"]')?.style
         .display,
     ).toBe('flex');
+  });
+
+  it('mounts the controls inside the current order heading after it appears', () => {
+    buildOrderPage({ includeHeading: false });
+
+    const controller = new BarcodeCheckInController();
+
+    controller.sync(true);
+
+    expect(document.querySelector('[data-app-room-barcode-check-in="true"]')).toBeNull();
+
+    document.body.insertAdjacentHTML('afterbegin', currentOrderHeadingHtml());
+    controller.sync(true);
+
+    const heading = document.querySelector<HTMLElement>('#panel_current_order_step2');
+    const controls = document.querySelector<HTMLElement>('[data-app-room-barcode-check-in="true"]');
+
+    expect(controls).not.toBeNull();
+    expect(heading?.contains(controls)).toBe(true);
   });
 
   it('increments the matching quantity after a debounced barcode scan', () => {

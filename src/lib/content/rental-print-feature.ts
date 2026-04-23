@@ -1,57 +1,10 @@
 import { syncPrintButton } from './menu-button';
 import { extractPrintableRowsFromTable } from '../row-extraction';
-import { getSettings } from '../settings';
-import type { ExtensionSettings, PrintRow } from '../types';
+import type { PrintRow } from '../types';
 
 export class RentalPrintFeature {
-  private settings: ExtensionSettings | null = null;
-
-  private observer: MutationObserver | null = null;
-
-  start() {
-    void this.initialize();
-  }
-
-  private async initialize() {
-    this.settings = await getSettings();
-
-    chrome.storage.onChanged.addListener(this.handleStorageChange);
-
-    this.observer = new MutationObserver(() => {
-      this.syncPageButton();
-    });
-
-    this.observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    this.syncPageButton();
-  }
-
-  private readonly handleStorageChange = (
-    changes: Record<string, chrome.storage.StorageChange>,
-    areaName: string,
-  ) => {
-    if (areaName !== 'sync' || !this.settings) {
-      return;
-    }
-
-    if (changes.rentalPrintButton) {
-      this.settings = {
-        ...this.settings,
-        rentalPrintButton: Boolean(changes.rentalPrintButton.newValue),
-      };
-      this.syncPageButton();
-    }
-  };
-
-  private syncPageButton() {
-    if (!this.settings) {
-      return;
-    }
-
-    syncPrintButton(this.settings.rentalPrintButton, (event) => {
+  sync(enabled: boolean) {
+    syncPrintButton(enabled, (event) => {
       event.preventDefault();
       event.stopPropagation();
       void this.handlePrintClick();

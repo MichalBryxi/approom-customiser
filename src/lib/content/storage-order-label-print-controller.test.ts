@@ -51,6 +51,23 @@ function appendModal() {
   document.body.append(wrapper);
 }
 
+function appendExistingModal() {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `
+    <div id="myModal" style="display:none;">
+      <div class="dd-item row">
+        <input class="print_art_id" type="hidden" value="1006876">
+        <input class="print_count" type="text" value="4">
+      </div>
+      <div class="dd-item row">
+        <input class="print_art_id" type="hidden" value="729239">
+        <input class="print_count" type="text" value="1">
+      </div>
+    </div>
+  `;
+  document.body.append(wrapper);
+}
+
 describe('StorageOrderLabelPrintController', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -92,5 +109,26 @@ describe('StorageOrderLabelPrintController', () => {
     ).map((input) => input.value);
 
     expect(printCounts).toEqual(['4', '1']);
+  });
+
+  it('keeps syncing counts when the modal already exists and the app rewrites values later', async () => {
+    const controller = new StorageOrderLabelPrintController();
+    appendExistingModal();
+    controller.sync(true);
+
+    document.querySelector<HTMLButtonElement>('#etiketten_button')?.click();
+
+    const modal = document.querySelector<HTMLElement>('#myModal');
+    const printCounts = Array.from(
+      document.querySelectorAll<HTMLInputElement>('#myModal .print_count'),
+    );
+
+    modal!.style.display = 'block';
+    printCounts[0]!.value = '4';
+    printCounts[1]!.value = '1';
+
+    vi.advanceTimersByTime(150);
+
+    expect(printCounts.map((input) => input.value)).toEqual(['0', '3']);
   });
 });

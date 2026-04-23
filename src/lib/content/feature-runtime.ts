@@ -1,6 +1,7 @@
 import { announceFeatureActivation } from './feature-activation-log';
 import { getSettings } from '../settings';
 import type { ExtensionSettings, FeatureId } from '../types';
+import type { ContentScriptContext } from '#imports';
 
 type UrlCondition = {
   pathEquals?: string;
@@ -55,17 +56,12 @@ export class ContentFeatureRuntime {
 
   private checkScheduled = false;
 
-  private originalPushState: History['pushState'] | null = null;
-
-  private originalReplaceState: History['replaceState'] | null = null;
-
-  private patchedPushState: History['pushState'] | null = null;
-
-  private patchedReplaceState: History['replaceState'] | null = null;
+  private context: ContentScriptContext | null = null;
 
   constructor(private readonly features: ContentFeatureDefinition[]) {}
 
-  start() {
+  start(context?: ContentScriptContext) {
+    this.context = context ?? null;
     void this.initialize();
   }
 
@@ -74,23 +70,13 @@ export class ContentFeatureRuntime {
     this.observer = null;
 
     chrome.storage.onChanged.removeListener(this.handleStorageChange);
-    window.removeEventListener('popstate', this.scheduleSync);
-    window.removeEventListener('hashchange', this.scheduleSync);
-
-    if (this.originalPushState && history.pushState === this.patchedPushState) {
-      history.pushState = this.originalPushState;
-    }
-
-    if (this.originalReplaceState && history.replaceState === this.patchedReplaceState) {
-      history.replaceState = this.originalReplaceState;
-    }
   }
 
   private async initialize() {
     this.settings = await getSettings();
 
     chrome.storage.onChanged.addListener(this.handleStorageChange);
-    this.installUrlChangeListeners();
+    this.context?.addEventListener(window, 'wxt:locationchange', this.scheduleSync);
 
     this.observer = new MutationObserver(() => {
       this.scheduleSync();
@@ -104,28 +90,6 @@ export class ContentFeatureRuntime {
     });
 
     this.syncFeatures();
-  }
-
-  private installUrlChangeListeners() {
-    this.originalPushState = history.pushState;
-    this.originalReplaceState = history.replaceState;
-
-    const originalPushState = this.originalPushState.bind(history);
-    this.patchedPushState = ((...args: Parameters<History['pushState']>) => {
-      originalPushState(...args);
-      this.scheduleSync();
-    }) as History['pushState'];
-    history.pushState = this.patchedPushState;
-
-    const originalReplaceState = this.originalReplaceState.bind(history);
-    this.patchedReplaceState = ((...args: Parameters<History['replaceState']>) => {
-      originalReplaceState(...args);
-      this.scheduleSync();
-    }) as History['replaceState'];
-    history.replaceState = this.patchedReplaceState;
-
-    window.addEventListener('popstate', this.scheduleSync);
-    window.addEventListener('hashchange', this.scheduleSync);
   }
 
   private readonly handleStorageChange = (
@@ -163,7 +127,8 @@ export class ContentFeatureRuntime {
     }
 
     this.checkScheduled = true;
-    window.setTimeout(() => {
+    const setTimeoutForContext = this.context?.setTimeout.bind(this.context) ?? window.setTimeout;
+    setTimeoutForContext(() => {
       this.checkScheduled = false;
       this.syncFeatures();
     }, 0);

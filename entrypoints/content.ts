@@ -5,8 +5,8 @@ import { ContentFeatureRuntime } from '../src/lib/content/feature-runtime';
 export default defineContentScript({
   matches: ['https://erp.app-room.ch/*'],
   runAt: 'document_idle',
-  main() {
+  main(ctx) {
     const runtime = new ContentFeatureRuntime(CONTENT_FEATURES);
-    runtime.start();
+    runtime.start(ctx);
   },
 });

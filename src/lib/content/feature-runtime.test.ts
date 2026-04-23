@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 
 import { ContentFeatureRuntime, type ContentFeatureDefinition } from './feature-runtime';
 import type { ExtensionSettings } from '../types';
+import type { ContentScriptContext } from '#imports';
 
 const ENABLED_SETTINGS: ExtensionSettings = {
   rentalPrintButton: true,
@@ -65,6 +66,37 @@ function buildFeature(sync = vi.fn()): ContentFeatureDefinition {
   };
 }
 
+function createTestContext() {
+  const listeners: Array<() => void> = [];
+
+  return {
+    context: {
+      addEventListener(
+        _target: Window,
+        type: string,
+        handler: EventListenerOrEventListenerObject,
+      ) {
+        if (type !== 'wxt:locationchange') {
+          return;
+        }
+
+        listeners.push(() => {
+          if (typeof handler === 'function') {
+            handler(new Event('wxt:locationchange'));
+            return;
+          }
+
+          handler.handleEvent(new Event('wxt:locationchange'));
+        });
+      },
+      setTimeout: window.setTimeout.bind(window),
+    } as unknown as ContentScriptContext,
+    emitLocationChange() {
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
 describe('ContentFeatureRuntime', () => {
   let runtime: ContentFeatureRuntime | null = null;
 
@@ -83,10 +115,11 @@ describe('ContentFeatureRuntime', () => {
   it('syncs a feature when its configured URL and DOM target match', async () => {
     installChromeStorage(ENABLED_SETTINGS);
     setPath('/rental/rent');
+    const testContext = createTestContext();
     const sync = vi.fn();
     runtime = new ContentFeatureRuntime([buildFeature(sync)]);
 
-    runtime.start();
+    runtime.start(testContext.context);
     await flushRuntime();
 
     expect(sync).toHaveBeenLastCalledWith(false);
@@ -103,20 +136,23 @@ describe('ContentFeatureRuntime', () => {
     const storage = installChromeStorage(ENABLED_SETTINGS);
     setPath('/rental/rent');
     document.body.innerHTML = '<button>Zeitachse</button>';
+    const testContext = createTestContext();
     const sync = vi.fn();
     runtime = new ContentFeatureRuntime([buildFeature(sync)]);
 
-    runtime.start();
+    runtime.start(testContext.context);
     await flushRuntime();
 
     expect(sync).toHaveBeenLastCalledWith(true);
 
     history.pushState({}, '', '/rental/other');
+    testContext.emitLocationChange();
     await flushRuntime();
 
     expect(sync).toHaveBeenLastCalledWith(false);
 
     history.pushState({}, '', '/rental/rent');
+    testContext.emitLocationChange();
     await flushRuntime();
 
     expect(sync).toHaveBeenLastCalledWith(true);

@@ -52,14 +52,13 @@ export class BarcodeCheckInController {
 
   private scanTimeout: number | null = null;
 
-  sync(enabled: boolean) {
+  sync(enabled: boolean, mountTarget = getCurrentOrderHeading()) {
     if (!enabled) {
       this.reset();
       this.removeControls();
       return;
     }
 
-    const mountTarget = getCurrentOrderHeading();
     if (!mountTarget) {
       return;
     }

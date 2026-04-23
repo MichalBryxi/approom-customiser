@@ -9,16 +9,13 @@
     "build": "wxt build --browser chrome",
     "zip": "wxt zip --browser chrome",
     "clean": "wxt clean",
-    "test": "vitest run",
     "submit:init": "wxt submit init",
     "submit": "wxt submit",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.313",
-    "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.2",
     "wxt": "^0.20.6"
   }
 }

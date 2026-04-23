@@ -21,26 +21,21 @@ function getToolbarAnchor() {
   );
 }
 
-export function syncPrintButton(
-  enabled: boolean,
-  onClick: (event: MouseEvent) => void,
-) {
-  const existing = document.querySelector<HTMLButtonElement>(PRINT_BUTTON_SELECTOR);
-  if (!enabled) {
-    existing?.remove();
-    return null;
-  }
-
+export function syncPrintButton(wrapper: HTMLElement, onClick: (event: MouseEvent) => void) {
+  const existing = wrapper.querySelector<HTMLButtonElement>(PRINT_BUTTON_SELECTOR);
   if (existing) {
     return existing;
   }
 
-  const anchorButton = getToolbarAnchor();
-  if (!anchorButton?.parentElement) {
+  const anchorButton =
+    wrapper.nextElementSibling instanceof HTMLButtonElement
+      ? wrapper.nextElementSibling
+      : getToolbarAnchor();
+  if (!anchorButton) {
     return null;
   }
 
   const button = createPrintButton(anchorButton, onClick);
-  anchorButton.insertAdjacentElement('beforebegin', button);
+  wrapper.replaceChildren(button);
   return button;
 }

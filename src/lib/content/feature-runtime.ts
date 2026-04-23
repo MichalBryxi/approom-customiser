@@ -1,32 +1,36 @@
-import { announceFeatureActivation } from './feature-activation-log';
-import { getSettings } from '../settings';
+import { announceFeatureActivation, logErpDebug } from './feature-activation-log';
+import { getSettings, watchSetting } from '../settings';
 import type { ExtensionSettings, FeatureId } from '../types';
-import type { ContentScriptContext } from '#imports';
+import { createIntegratedUi } from 'wxt/utils/content-script-ui/integrated';
+import type { IntegratedContentScriptUi } from 'wxt/utils/content-script-ui/integrated';
+import type { ContentScriptAppendMode } from 'wxt/utils/content-script-ui/types';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 type UrlCondition = {
   pathEquals?: string;
   pathPrefix?: string;
-};
-
-type DomCondition = {
-  selector: string;
-  textIncludes?: string;
+  searchIncludes?: string;
 };
 
 export type ContentFeatureDefinition = {
   id: FeatureId;
   label: string;
   url: UrlCondition;
-  dom: DomCondition;
-  sync: (enabled: boolean) => void;
+  anchor: string;
+  append?: ContentScriptAppendMode;
+  tag?: string;
+  mount: (wrapper: HTMLElement) => void;
+  remove?: () => void;
 };
 
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
+type RuntimeFeature = {
+  definition: ContentFeatureDefinition;
+  ui: IntegratedContentScriptUi<void>;
+  autoMounting: boolean;
+};
 
 function matchesUrlCondition(condition: UrlCondition) {
-  const { pathname } = window.location;
+  const { pathname, search } = window.location;
 
   if (condition.pathEquals && pathname !== condition.pathEquals) {
     return false;
@@ -36,27 +40,21 @@ function matchesUrlCondition(condition: UrlCondition) {
     return false;
   }
 
+  if (condition.searchIncludes && !search.includes(condition.searchIncludes)) {
+    return false;
+  }
+
   return true;
-}
-
-function matchesDomCondition(condition: DomCondition) {
-  return Array.from(document.querySelectorAll<HTMLElement>(condition.selector)).some((element) => {
-    if (!condition.textIncludes) {
-      return true;
-    }
-
-    return normalizeText(element.textContent).includes(condition.textIncludes);
-  });
 }
 
 export class ContentFeatureRuntime {
   private settings: ExtensionSettings | null = null;
 
-  private observer: MutationObserver | null = null;
-
-  private checkScheduled = false;
-
   private context: ContentScriptContext | null = null;
+
+  private runtimeFeatures: RuntimeFeature[] = [];
+
+  private unwatchSettings: Array<() => void> = [];
 
   constructor(private readonly features: ContentFeatureDefinition[]) {}
 
@@ -66,90 +64,119 @@ export class ContentFeatureRuntime {
   }
 
   stop() {
-    this.observer?.disconnect();
-    this.observer = null;
+    this.runtimeFeatures.forEach(({ ui }) => {
+      ui.remove();
+    });
+    this.runtimeFeatures = [];
 
-    chrome.storage.onChanged.removeListener(this.handleStorageChange);
+    this.unwatchSettings.forEach((unwatch) => unwatch());
+    this.unwatchSettings = [];
   }
 
   private async initialize() {
     this.settings = await getSettings();
 
-    chrome.storage.onChanged.addListener(this.handleStorageChange);
+    this.runtimeFeatures = this.features.map((definition) => this.createRuntimeFeature(definition));
     this.context?.addEventListener(window, 'wxt:locationchange', this.scheduleSync);
 
-    this.observer = new MutationObserver(() => {
-      this.scheduleSync();
-    });
+    this.unwatchSettings = this.features.map((feature) => {
+      const unwatch = watchSetting(feature.id, (newValue) => {
+        if (!this.settings) {
+          return;
+        }
 
-    this.observer.observe(document.body, {
-      attributes: true,
-      childList: true,
-      characterData: true,
-      subtree: true,
+        this.settings = {
+          ...this.settings,
+          [feature.id]: newValue,
+        };
+        this.syncFeature(this.getRuntimeFeature(feature.id));
+      });
+      this.context?.onInvalidated(unwatch);
+      return unwatch;
     });
 
     this.syncFeatures();
   }
 
-  private readonly handleStorageChange = (
-    changes: Record<string, chrome.storage.StorageChange>,
-    areaName: string,
-  ) => {
-    if (areaName !== 'sync' || !this.settings) {
+  private createRuntimeFeature(definition: ContentFeatureDefinition): RuntimeFeature {
+    if (!this.context) {
+      throw new Error('ContentFeatureRuntime requires a WXT content script context.');
+    }
+
+    const ui = createIntegratedUi(this.context, {
+      anchor: definition.anchor,
+      append: definition.append,
+      position: 'inline',
+      tag: definition.tag ?? 'span',
+      onMount: (wrapper) => {
+        announceFeatureActivation(definition.id, definition.label);
+        logErpDebug('Content feature mounted.', {
+          featureId: definition.id,
+          anchor: definition.anchor,
+        });
+        definition.mount(wrapper);
+      },
+      onRemove: () => {
+        definition.remove?.();
+      },
+    });
+
+    return {
+      definition,
+      ui,
+      autoMounting: false,
+    };
+  }
+
+  private getRuntimeFeature(featureId: FeatureId) {
+    const runtimeFeature = this.runtimeFeatures.find(
+      (feature) => feature.definition.id === featureId,
+    );
+    if (!runtimeFeature) {
+      throw new Error(`Unknown content feature: ${featureId}`);
+    }
+
+    return runtimeFeature;
+  }
+
+  private syncFeature(feature: RuntimeFeature) {
+    if (!this.settings) {
       return;
     }
 
-    const nextSettings = { ...this.settings };
-    let settingsChanged = false;
+    const shouldAutoMount =
+      this.settings[feature.definition.id] && matchesUrlCondition(feature.definition.url);
 
-    for (const feature of this.features) {
-      const change = changes[feature.id];
-      if (!change) {
-        continue;
-      }
-
-      nextSettings[feature.id] = Boolean(change.newValue);
-      settingsChanged = true;
-    }
-
-    if (!settingsChanged) {
+    if (shouldAutoMount && !feature.autoMounting) {
+      feature.autoMounting = true;
+      logErpDebug('Content feature waiting for anchor.', {
+        featureId: feature.definition.id,
+        anchor: feature.definition.anchor,
+        path: window.location.pathname,
+        search: window.location.search,
+      });
+      feature.ui.autoMount();
       return;
     }
 
-    this.settings = nextSettings;
-    this.scheduleSync();
-  };
+    if (!shouldAutoMount && feature.autoMounting) {
+      feature.autoMounting = false;
+      logErpDebug('Content feature disabled for current page or setting.', {
+        featureId: feature.definition.id,
+        path: window.location.pathname,
+        search: window.location.search,
+      });
+      feature.ui.remove();
+    }
+  }
 
   private readonly scheduleSync = () => {
-    if (this.checkScheduled) {
-      return;
-    }
-
-    this.checkScheduled = true;
-    const setTimeoutForContext = this.context?.setTimeout.bind(this.context) ?? window.setTimeout;
-    setTimeoutForContext(() => {
-      this.checkScheduled = false;
+    this.context?.setTimeout(() => {
       this.syncFeatures();
     }, 0);
   };
 
   private syncFeatures() {
-    if (!this.settings) {
-      return;
-    }
-
-    for (const feature of this.features) {
-      const enabled =
-        this.settings[feature.id] &&
-        matchesUrlCondition(feature.url) &&
-        matchesDomCondition(feature.dom);
-
-      if (enabled) {
-        announceFeatureActivation(feature.id, feature.label);
-      }
-
-      feature.sync(enabled);
-    }
+    this.runtimeFeatures.forEach((feature) => this.syncFeature(feature));
   }
 }

@@ -3,8 +3,8 @@ import { extractPrintableRowsFromTable } from '../row-extraction';
 import type { PrintRow } from '../types';
 
 export class RentalPrintFeature {
-  sync(enabled: boolean) {
-    syncPrintButton(enabled, (event) => {
+  mount(wrapper: HTMLElement) {
+    syncPrintButton(wrapper, (event) => {
       event.preventDefault();
       event.stopPropagation();
       void this.handlePrintClick();

@@ -11,7 +11,6 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 - WXT
 - TypeScript
 - Chrome Manifest V3
-- Vitest
 
 ## Local development
 
@@ -54,14 +53,6 @@ Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configur
 7. Select `build/chromium-mv3-dev` when using `pnpm dev`.
 8. Select `build/chrome-mv3` when using `pnpm build`.
 9. After rebuilding, click the extension's `Reload` button in the Extensions page.
-
-## Testing
-
-Run unit tests with:
-
-```bash
-pnpm test
-```
 
 ## Packaging for the Chrome Web Store
 

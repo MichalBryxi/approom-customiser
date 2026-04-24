@@ -113,7 +113,7 @@ export class BarcodeCheckInController {
     startButton.dataset.appRoomBarcodeCheckInStart = 'true';
 
     const icon = document.createElement('i');
-    icon.className = 'fal fa-barcode';
+    icon.className = 'fa fa-eye';
     icon.setAttribute('aria-hidden', 'true');
     startButton.append(icon, document.createTextNode(' Per Barcode einbuchen'));
     startButton.addEventListener('click', this.handleStartClick);

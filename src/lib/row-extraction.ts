@@ -21,7 +21,7 @@ function getVisibleRowCells(row: HTMLTableRowElement) {
   return Array.from(row.cells).filter(isElementVisible);
 }
 
-export function extractVisibleEntriesFromRow(row: HTMLTableRowElement): PrintJobEntry[] {
+function getVisibleHeaderCellPairs(row: HTMLTableRowElement) {
   const table = row.closest('table');
   if (!(table instanceof HTMLTableElement)) {
     throw new Error('The active row is not inside a table.');
@@ -29,16 +29,24 @@ export function extractVisibleEntriesFromRow(row: HTMLTableRowElement): PrintJob
 
   const headers = getVisibleColumnHeaders(table);
   const cells = getVisibleRowCells(row);
-  const entries: PrintJobEntry[] = [];
   const totalColumns = Math.min(headers.length, cells.length);
 
-  for (let index = 0; index < totalColumns; index += 1) {
-    const key = normalizeText(headers[index]?.textContent);
+  return Array.from({ length: totalColumns }, (_, index) => ({
+    header: headers[index],
+    cell: cells[index],
+  }));
+}
+
+export function extractVisibleEntriesFromRow(row: HTMLTableRowElement): PrintJobEntry[] {
+  const entries: PrintJobEntry[] = [];
+
+  for (const { header, cell } of getVisibleHeaderCellPairs(row)) {
+    const key = normalizeText(header?.textContent);
     if (!key) {
       continue;
     }
 
-    const value = normalizeText(cells[index]?.textContent) || '-';
+    const value = normalizeText(cell?.textContent) || '-';
     entries.push({ key, value });
   }
 
@@ -60,23 +68,58 @@ function splitRentEans(value: string) {
     .filter(Boolean);
 }
 
+function getCellTextByHeader(row: HTMLTableRowElement, headerLabel: string) {
+  const pair = getVisibleHeaderCellPairs(row).find(
+    ({ header }) => normalizeText(header?.textContent).toLowerCase() === headerLabel.toLowerCase(),
+  );
+
+  return normalizeText(pair?.cell?.textContent) || '';
+}
+
+function getCellLinesByHeader(
+  row: HTMLTableRowElement,
+  headerLabel: string,
+  options?: { preserveEmpty?: boolean },
+) {
+  const pair = getVisibleHeaderCellPairs(row).find(
+    ({ header }) => normalizeText(header?.textContent).toLowerCase() === headerLabel.toLowerCase(),
+  );
+
+  if (!(pair?.cell instanceof HTMLElement)) {
+    return [];
+  }
+
+  const lines = pair.cell.innerText
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => normalizeText(line));
+
+  return options?.preserveEmpty ? lines : lines.filter(Boolean);
+}
+
 export function extractPrintableRowsFromTable(table: HTMLTableElement): PrintRow[] {
   const rows = Array.from(table.tBodies[0]?.rows ?? []).filter((row): row is HTMLTableRowElement =>
     row instanceof HTMLTableRowElement,
   );
 
   return rows.flatMap((row) => {
-    const rowRecord = buildRowRecord(row);
-    const kunde = rowRecord.Kunde ?? '-';
-    const mietartikel = rowRecord.Mietartikel ?? '-';
-    const rentEans = splitRentEans(rowRecord['Rent-EAN'] ?? '');
+    const kunde = getCellTextByHeader(row, 'Kunde') || '-';
+    const mietartikelLines = getCellLinesByHeader(row, 'Mietartikel');
+    const remarkLines = getCellLinesByHeader(row, 'Bemerkung', { preserveEmpty: true });
+    const rentEans = splitRentEans(getCellTextByHeader(row, 'Rent-EAN'));
 
     const printableRentEans = rentEans.length > 0 ? rentEans : ['-'];
 
-    return printableRentEans.map<PrintRow>((rentEan) => [
-      { key: 'Kunde', value: kunde },
-      { key: 'Mietartikel', value: mietartikel },
-      { key: 'Rent-EAN', value: rentEan },
-    ]);
+    return printableRentEans.map<PrintRow>((rentEan, index) => {
+      const mietartikel = mietartikelLines[index] || '-';
+      const remark = remarkLines[index] || '';
+      const middleColumnValue = remark ? `${mietartikel}; ${remark}` : mietartikel;
+
+      return [
+        { key: 'Kunde', value: kunde },
+        { key: 'Mietartikel', value: middleColumnValue },
+        { key: 'Rent-EAN', value: rentEan },
+      ];
+    });
   });
 }

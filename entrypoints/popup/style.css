@@ -6,55 +6,26 @@ body {
 }
 
 .popup {
-  width: 320px;
+  width: 280px;
   padding: 16px;
 }
 
 .popup h1 {
-  margin: 0 0 6px;
+  margin: 0 0 12px;
   font-size: 16px;
 }
 
-.popup__form {
+.popup__body {
   display: grid;
   gap: 10px;
 }
 
-.popup__group {
-  overflow: visible;
-  background: #ffffff;
-  border: 1px solid #d9e2ec;
-  border-radius: 10px;
-}
-
-.popup__group-summary {
-  padding: 10px 12px;
-  color: #334e68;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  list-style-position: inside;
-  user-select: none;
-}
-
-.popup__group-summary:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-}
-
-.popup__group-body {
-  display: grid;
-  gap: 8px;
-  padding: 0 8px 8px;
-}
-
 .popup__toggle {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: #f7f8fa;
+  background: #ffffff;
   border: 1px solid #d9e2ec;
   border-radius: 8px;
 }
@@ -63,67 +34,23 @@ body {
   flex: 1;
 }
 
-.popup__help {
-  position: relative;
-  display: inline-grid;
-  width: 18px;
-  height: 18px;
-  place-items: center;
-  flex: 0 0 auto;
-  color: #52606d;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  background: #f0f4f8;
-  border: 1px solid #bcccdc;
-  border-radius: 999px;
-  cursor: help;
+.popup__button {
+  width: 100%;
+  padding: 9px 12px;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
 }
 
-.popup__help:focus-visible {
+.popup__button:focus-visible,
+.popup__toggle:focus-within {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
-}
-
-.popup__tooltip {
-  position: absolute;
-  right: -4px;
-  bottom: calc(100% + 8px);
-  z-index: 1;
-  width: 230px;
-  padding: 8px 10px;
-  color: #102a43;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.35;
-  text-align: left;
-  pointer-events: none;
-  visibility: hidden;
-  background: #ffffff;
-  border: 1px solid #bcccdc;
-  border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(16, 42, 67, 0.16);
-  opacity: 0;
-  transform: translateY(4px);
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease,
-    visibility 120ms ease;
-}
-
-.popup__tooltip-mark {
-  display: inline;
-  padding: 1px 4px;
-  border-radius: 4px;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-
-.popup__help:hover .popup__tooltip,
-.popup__help:focus .popup__tooltip {
-  visibility: visible;
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .popup__error {

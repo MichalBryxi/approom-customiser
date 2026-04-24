@@ -94,6 +94,19 @@ export class ContentFeatureRuntime {
       this.context?.onInvalidated(unwatch);
       return unwatch;
     });
+    const unwatchExtensionEnabled = watchSetting('extensionEnabled', (newValue) => {
+      if (!this.settings) {
+        return;
+      }
+
+      this.settings = {
+        ...this.settings,
+        extensionEnabled: newValue,
+      };
+      this.syncFeatures();
+    });
+    this.context?.onInvalidated(unwatchExtensionEnabled);
+    this.unwatchSettings.push(unwatchExtensionEnabled);
 
     this.syncFeatures();
   }
@@ -145,7 +158,9 @@ export class ContentFeatureRuntime {
     }
 
     const shouldAutoMount =
-      this.settings[feature.definition.id] && matchesUrlCondition(feature.definition.url);
+      this.settings.extensionEnabled &&
+      this.settings[feature.definition.id] &&
+      matchesUrlCondition(feature.definition.url);
 
     if (shouldAutoMount && !feature.autoMounting) {
       feature.autoMounting = true;

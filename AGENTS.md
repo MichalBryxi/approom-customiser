@@ -17,7 +17,8 @@
 
 - `entrypoints/content.ts` registers the content script for `https://erp.app-room.ch/*` and starts the shared runtime.
 - `entrypoints/background.ts` bootstraps extension defaults and handles background-only work.
-- `entrypoints/popup/` contains the extension popup UI.
+- `entrypoints/popup/` contains the compact extension popup UI with only the global enable/disable toggle and a link to settings.
+- `entrypoints/options/` contains the full extension settings page for per-feature toggles.
 - `entrypoints/print/` contains the extension print page used by the rental print feature.
 - `src/lib/content/feature-runtime.ts` is the generic runtime that mounts configured features when URL and anchor conditions match.
 - `src/lib/content/feature-config.ts` is the central registry for content features, their ERP page URL conditions, anchor selectors, labels, and controller mount/remove callbacks.
@@ -32,6 +33,7 @@
 ## Settings model
 
 - Each feature has a boolean setting keyed by its `FeatureId`.
+- `extensionEnabled` is the global on/off switch. The popup should expose only this switch and a link to the options page.
 - Defaults are defined in `DEFAULT_SETTINGS` in `src/lib/settings.ts`.
 - Popup metadata is defined in `FEATURE_SETTING_GROUPS` and `FEATURE_DEFINITIONS`.
 - Storage keys are generated as `sync:<featureId>` and persisted via WXT storage.

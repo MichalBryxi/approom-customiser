@@ -2,6 +2,7 @@ import { storage } from 'wxt/utils/storage';
 
 import { CHECK_IN_STATUS_COLORS } from './check-in-status-colors';
 import type { ExtensionSettings, FeatureId } from './types';
+export type ExtensionSettingId = keyof ExtensionSettings;
 
 export type FeatureDescriptionPart =
   | string
@@ -36,6 +37,7 @@ export const FEATURE_SETTING_GROUPS = [
 export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
+  extensionEnabled: true,
   rentalPrintButton: true,
   barcodeCheckIn: true,
   checkInQuantityWarning: true,
@@ -94,14 +96,14 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   },
 ];
 
-const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as FeatureId[];
+const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as ExtensionSettingId[];
 
 const SETTING_STORAGE_KEYS = SETTINGS_KEYS.reduce(
   (acc, key) => ({
     ...acc,
     [key]: `sync:${key}` as const,
   }),
-  {} as Record<FeatureId, `sync:${FeatureId}`>,
+  {} as Record<ExtensionSettingId, `sync:${ExtensionSettingId}`>,
 );
 
 export async function ensureDefaultSettings() {
@@ -135,18 +137,18 @@ export async function getSettings(): Promise<ExtensionSettings> {
   return Object.fromEntries(entries) as ExtensionSettings;
 }
 
-export async function updateSetting(featureId: FeatureId, enabled: boolean) {
-  await storage.setItem(SETTING_STORAGE_KEYS[featureId], enabled);
+export async function updateSetting(settingId: ExtensionSettingId, enabled: boolean) {
+  await storage.setItem(SETTING_STORAGE_KEYS[settingId], enabled);
 }
 
 export function watchSetting(
-  featureId: FeatureId,
+  settingId: ExtensionSettingId,
   callback: (newValue: boolean, oldValue: boolean) => void,
 ) {
-  return storage.watch<boolean>(SETTING_STORAGE_KEYS[featureId], (newValue, oldValue) => {
+  return storage.watch<boolean>(SETTING_STORAGE_KEYS[settingId], (newValue, oldValue) => {
     callback(
-      newValue ?? DEFAULT_SETTINGS[featureId],
-      oldValue ?? DEFAULT_SETTINGS[featureId],
+      newValue ?? DEFAULT_SETTINGS[settingId],
+      oldValue ?? DEFAULT_SETTINGS[settingId],
     );
   });
 }

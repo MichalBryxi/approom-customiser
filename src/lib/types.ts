@@ -6,6 +6,7 @@ export type FeatureId =
   | 'customerRegistrationFields';
 
 export type ExtensionSettings = {
+  extensionEnabled: boolean;
   rentalPrintButton: boolean;
   barcodeCheckIn: boolean;
   checkInQuantityWarning: boolean;

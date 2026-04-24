@@ -27,6 +27,10 @@ export const FEATURE_SETTING_GROUPS = [
     id: 'storage-order',
     breadcrumb: 'Lager > Lagerbestellung > Bleistift',
   },
+  {
+    id: 'customer-registration',
+    breadcrumb: 'Customer Registration > Customer',
+  },
 ] as const;
 
 export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
@@ -36,6 +40,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   barcodeCheckIn: true,
   checkInQuantityWarning: true,
   printLabelsByCheckInQuantity: true,
+  customerRegistrationFields: true,
 };
 
 export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
@@ -79,6 +84,13 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: 'Etiketten nach Einbuchmenge drucken',
     description:
       'Übernimmt beim Öffnen des Etikettendrucks die aktuelle Anzahl einbuchen als Druckmenge.',
+  },
+  {
+    id: 'customerRegistrationFields',
+    groupId: 'customer-registration',
+    label: 'Registrierungsfelder',
+    description:
+      'Passt die Kundenregistrierung an: verschiebt zusätzliche Adress- und Kontaktdaten in den Bereich Extra, benennt Strasse um und macht Tel. Mobile obligatorisch.',
   },
 ];
 

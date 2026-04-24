@@ -2,13 +2,15 @@ export type FeatureId =
   | 'rentalPrintButton'
   | 'barcodeCheckIn'
   | 'checkInQuantityWarning'
-  | 'printLabelsByCheckInQuantity';
+  | 'printLabelsByCheckInQuantity'
+  | 'customerRegistrationFields';
 
 export type ExtensionSettings = {
   rentalPrintButton: boolean;
   barcodeCheckIn: boolean;
   checkInQuantityWarning: boolean;
   printLabelsByCheckInQuantity: boolean;
+  customerRegistrationFields: boolean;
 };
 
 export type PrintJobEntry = {

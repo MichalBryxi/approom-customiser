@@ -26,8 +26,9 @@
 - `src/lib/content/barcode-check-in-controller.ts` implements barcode-based storage-order check-in.
 - `src/lib/content/storage-order-warning-controller.ts` highlights storage-order rows by check-in status.
 - `src/lib/content/storage-order-label-print-controller.ts` copies check-in quantities into label-print quantities.
-- `src/lib/content/customer-registration-fields-controller.ts` customises the customer registration form for ERP-specific fields.
+- `src/lib/content/customer-registration-fields-controller.ts` customises the customer registration form.
 - `src/lib/settings.ts` defines default settings, popup setting groups, labels, and descriptions.
+- Registration field matrix rows and language columns are defined in `src/lib/settings.ts` as `CUSTOMER_REGISTRATION_FIELD_DEFINITIONS` and `CUSTOMER_REGISTRATION_LANGUAGES`.
 - `src/lib/types.ts` defines `FeatureId` and `ExtensionSettings`; add every new feature setting there.
 
 ## Settings model

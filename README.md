@@ -1,6 +1,6 @@
-# App-Room ERP Enhancer
+# AppRoom Customiser
 
-Chrome extension for `https://erp.app-room.ch/rental/rent` that injects configurable workflow helpers into the App-Room ERP rental page.
+Chrome extension for `https://erp.app-room.ch/*` that injects configurable workflow helpers into the App-Room ERP interface.
 
 ## Current feature
 

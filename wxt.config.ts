@@ -29,12 +29,12 @@ export default defineConfig({
       : undefined,
   },
   manifest: {
-    name: 'App-Room ERP Enhancer',
-    description: 'Enhances the App-Room ERP rental page with configurable workflow helpers.',
+    name: 'AppRoom Customiser',
+    description: 'Customises the App-Room ERP interface with configurable workflow helpers.',
     permissions: ['storage'],
     host_permissions: ['https://erp.app-room.ch/*'],
     action: {
-      default_title: 'App-Room ERP Enhancer',
+      default_title: 'AppRoom Customiser',
       default_popup: 'popup.html',
     },
   },

@@ -1,6 +1,18 @@
 import { syncPrintButton } from './menu-button';
 import type { PrintRow } from '../types';
 
+const UI_WAIT_MS = 150;
+const PAGE_WAIT_MS = 10000;
+const PRINT_DELAY_MS = 50;
+const POSITION_ITEM_SELECTOR = '.list-group.mb-2 > .list-group-item';
+
+type DetailPosition = {
+  rentalArticle: string;
+  name: string;
+  height: string;
+  weight: string;
+};
+
 export class RentalPrintFeature {
   private isPrinting = false;
 
@@ -60,12 +72,12 @@ export class RentalPrintFeature {
     printWindow.focus();
     printWindow.setTimeout(() => {
       printWindow.print();
-    }, 50);
+    }, PRINT_DELAY_MS);
   }
 
   private waitForUiUpdate() {
     return new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 150);
+      window.setTimeout(resolve, UI_WAIT_MS);
     });
   }
 
@@ -81,8 +93,8 @@ export class RentalPrintFeature {
 
   private waitForCondition<T>(
     readValue: () => T | null | undefined | false,
-    timeoutMs = 8000,
-    intervalMs = 150,
+    timeoutMs = PAGE_WAIT_MS,
+    intervalMs = UI_WAIT_MS,
   ) {
     const startedAt = Date.now();
 
@@ -168,51 +180,48 @@ export class RentalPrintFeature {
   }
 
   private hasRentalPositionList() {
-    return document.querySelector('.list-group.mb-2 .list-group-item') !== null;
+    return document.querySelector(POSITION_ITEM_SELECTOR) !== null;
   }
 
   private async waitForDetailPage(previousUrl: string) {
     await this.waitForCondition(
       () => (window.location.href !== previousUrl || this.hasRentalPositionList() ? true : null),
-      10000,
+      PAGE_WAIT_MS,
     );
 
-    await this.waitForCondition(() => (this.hasRentalPositionList() ? true : null), 10000);
+    await this.waitForCondition(() => (this.hasRentalPositionList() ? true : null), PAGE_WAIT_MS);
   }
 
   private getLegendLabel(legend: HTMLLegendElement | null) {
     return this.normalizeText(legend?.textContent).replace(/\*/g, '').trim();
   }
 
-  private labelMatches(legendText: string, label: string, exact: boolean) {
-    return exact ? legendText === label : legendText.includes(label);
-  }
+  private getFieldsetByLabel(scope: ParentNode, label: string) {
+    const candidates: Array<{ fieldset: HTMLFieldSetElement; label: string }> = [];
 
-  private getFieldsetWithOwnLegend(scope: ParentNode, label: string, exact: boolean) {
-    return Array.from(scope.querySelectorAll<HTMLFieldSetElement>('fieldset')).find((fieldset) => {
-      return this.labelMatches(this.getLegendLabel(fieldset.querySelector('legend')), label, exact);
-    });
-  }
-
-  private getFieldsetAfterLegend(scope: ParentNode, label: string, exact: boolean) {
-    const legend = Array.from(scope.querySelectorAll<HTMLLegendElement>('legend')).find((candidate) => {
-      return this.labelMatches(this.getLegendLabel(candidate), label, exact);
-    });
-    const nextElement = legend?.nextElementSibling;
-    if (nextElement instanceof HTMLFieldSetElement) {
-      return nextElement;
+    for (const fieldset of scope.querySelectorAll<HTMLFieldSetElement>('fieldset')) {
+      candidates.push({
+        fieldset,
+        label: this.getLegendLabel(fieldset.querySelector('legend')),
+      });
     }
 
-    return undefined;
-  }
+    for (const legend of scope.querySelectorAll<HTMLLegendElement>('legend')) {
+      const nextElement = legend.nextElementSibling;
+      if (nextElement instanceof HTMLFieldSetElement) {
+        candidates.push({
+          fieldset: nextElement,
+          label: this.getLegendLabel(legend),
+        });
+      }
+    }
 
-  private getFieldsetByLabel(scope: ParentNode, label: string) {
-    return (
-      this.getFieldsetWithOwnLegend(scope, label, true) ??
-      this.getFieldsetAfterLegend(scope, label, true) ??
-      this.getFieldsetWithOwnLegend(scope, label, false) ??
-      this.getFieldsetAfterLegend(scope, label, false)
-    );
+    const exact = candidates.find((candidate) => candidate.label === label);
+    if (exact) {
+      return exact.fieldset;
+    }
+
+    return candidates.find((candidate) => candidate.label.includes(label))?.fieldset;
   }
 
   private getMultiselectValue(fieldset: HTMLFieldSetElement | undefined) {
@@ -222,6 +231,20 @@ export class RentalPrintFeature {
   private getInputValue(fieldset: HTMLFieldSetElement | undefined) {
     const input = fieldset?.querySelector<HTMLInputElement>('input');
     return this.normalizeText(input?.value) || this.normalizeText(input?.getAttribute('aria-valuenow'));
+  }
+
+  private getFieldValue(scope: ParentNode, label: string) {
+    return this.getInputValue(this.getFieldsetByLabel(scope, label));
+  }
+
+  private getNumericFieldValue(scope: ParentNode, fieldName: string, label: string) {
+    return (
+      this.normalizeText(
+        scope
+          .querySelector<HTMLInputElement>(`span[name="${fieldName}"] input`)
+          ?.getAttribute('aria-valuenow'),
+      ) || this.getFieldValue(scope, label)
+    );
   }
 
   private formatNameColumn(name: string, height: string, weight: string) {
@@ -254,9 +277,7 @@ export class RentalPrintFeature {
   }
 
   private async expandDetailPositions() {
-    const items = Array.from(document.querySelectorAll<HTMLElement>('.list-group.mb-2 > .list-group-item'));
-
-    for (const item of items) {
+    for (const item of this.getDetailPositionItems()) {
       const expandButton = item
         .querySelector<HTMLElement>('.pos-arrow button i.fa-chevron-down')
         ?.closest<HTMLButtonElement>('button');
@@ -270,41 +291,43 @@ export class RentalPrintFeature {
     }
   }
 
+  private getDetailPositionItems() {
+    return Array.from(document.querySelectorAll<HTMLElement>(POSITION_ITEM_SELECTOR));
+  }
+
+  private readDetailPosition(item: HTMLElement): DetailPosition {
+    return {
+      rentalArticle: this.getMultiselectValue(this.getFieldsetByLabel(item, 'Mietartikel')),
+      name:
+        this.normalizeText(item.querySelector<HTMLInputElement>('input[name="rental.object.fields.name"]')?.value) ||
+        this.getFieldValue(item, 'Name'),
+      height: this.getNumericFieldValue(item, 'rental.object.fields.size', 'Körpergrösse'),
+      weight: this.getNumericFieldValue(item, 'rental.object.fields.weight', 'Gewicht'),
+    };
+  }
+
+  private detailPositionToPrintRow(customerName: string, position: DetailPosition): PrintRow | null {
+    const nameColumn = this.formatNameColumn(position.name, position.height, position.weight);
+    if (!position.rentalArticle && !nameColumn) {
+      return null;
+    }
+
+    return [
+      { key: 'customer', value: customerName },
+      { key: 'rentalArticle', value: position.rentalArticle },
+      { key: 'name', value: nameColumn },
+    ];
+  }
+
   private extractDetailRows() {
     const customerName = this.getCustomerName();
-    const items = Array.from(document.querySelectorAll<HTMLElement>('.list-group.mb-2 > .list-group-item'));
     const rows: PrintRow[] = [];
 
-    for (const item of items) {
-      const rentalArticle = this.getMultiselectValue(this.getFieldsetByLabel(item, 'Mietartikel'));
-      const name =
-        this.normalizeText(item.querySelector<HTMLInputElement>('input[name="rental.object.fields.name"]')?.value) ||
-        this.getInputValue(this.getFieldsetByLabel(item, 'Name'));
-      const height =
-        this.normalizeText(
-          item
-            .querySelector<HTMLInputElement>('span[name="rental.object.fields.size"] input')
-            ?.getAttribute('aria-valuenow'),
-        ) ||
-        this.getInputValue(this.getFieldsetByLabel(item, 'Körpergrösse'));
-      const weight =
-        this.normalizeText(
-          item
-            .querySelector<HTMLInputElement>('span[name="rental.object.fields.weight"] input')
-            ?.getAttribute('aria-valuenow'),
-        ) ||
-        this.getInputValue(this.getFieldsetByLabel(item, 'Gewicht'));
-      const nameColumn = this.formatNameColumn(name, height, weight);
-
-      if (!rentalArticle && !nameColumn) {
-        continue;
+    for (const item of this.getDetailPositionItems()) {
+      const row = this.detailPositionToPrintRow(customerName, this.readDetailPosition(item));
+      if (row) {
+        rows.push(row);
       }
-
-      rows.push([
-        { key: 'customer', value: customerName },
-        { key: 'rentalArticle', value: rentalArticle },
-        { key: 'name', value: nameColumn },
-      ]);
     }
 
     return rows;
@@ -319,7 +342,7 @@ export class RentalPrintFeature {
       }
 
       return this.getListRows().length > 0 && !this.hasRentalPositionList() ? true : null;
-    }, 10000);
+    }, PAGE_WAIT_MS);
 
     await this.waitForUiUpdate();
   }
@@ -336,7 +359,7 @@ export class RentalPrintFeature {
     const rows: PrintRow[] = [];
 
     for (let rowIndex = 0; rowIndex < initialRows.length; rowIndex += 1) {
-      const currentRow = await this.waitForCondition(() => this.getListRows()[rowIndex], 10000);
+      const currentRow = await this.waitForCondition(() => this.getListRows()[rowIndex], PAGE_WAIT_MS);
       const previousUrl = window.location.href;
 
       await this.clickEditAction(currentRow);

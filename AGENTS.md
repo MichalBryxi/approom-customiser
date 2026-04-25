@@ -11,6 +11,7 @@
 - Do not write, add, maintain, or run automated tests for this project.
 - Verify changes with `pnpm build` when validation is needed.
 - User-facing labels, descriptions, validation messages, and settings text should be implemented in German unless the requested ERP page copy explicitly needs another language.
+- The settings page in `entrypoints/options/` must use German text only.
 - Keep features small and page-specific. Prefer adding a dedicated controller under `src/lib/content/` and registering it in the shared feature runtime instead of adding one-off logic directly to `entrypoints/content.ts`.
 
 ## Where things live

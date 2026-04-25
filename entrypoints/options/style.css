@@ -94,6 +94,19 @@ body {
   padding-top: 4px;
 }
 
+.options__field {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+}
+
+.options__field-label {
+  font-weight: 600;
+}
+
 .options__matrix-scroll {
   max-width: 100%;
   overflow-x: auto;

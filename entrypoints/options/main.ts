@@ -183,6 +183,33 @@ function createCustomerRegistrationMatrix(settings: ExtensionSettings) {
   return wrapper;
 }
 
+function appendRentalPrintConfiguration(body: HTMLElement, settings: ExtensionSettings) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'options__nested-options';
+
+  const label = document.createElement('label');
+  label.className = 'options__field';
+
+  const labelText = document.createElement('span');
+  labelText.className = 'options__field-label';
+  labelText.textContent = 'Druck überspringen, wenn Mietobjekt passt';
+
+  const input = document.createElement('input');
+  input.className = 'options__matrix-text';
+  input.type = 'text';
+  input.name = 'rentalPrintSkipMietobjektPattern';
+  input.value =
+    settings.rentalPrintSkipMietobjektPattern ??
+    DEFAULT_SETTINGS.rentalPrintSkipMietobjektPattern;
+  input.addEventListener('change', () => {
+    void updateSetting('rentalPrintSkipMietobjektPattern', input.value);
+  });
+
+  label.append(labelText, input);
+  wrapper.append(label);
+  body.append(wrapper);
+}
+
 function appendCustomerRegistrationConfiguration(body: HTMLElement, settings: ExtensionSettings) {
   body.append(createCustomerRegistrationMatrix(settings));
 }
@@ -235,6 +262,10 @@ async function renderOptions() {
         });
 
         body.append(wrapper);
+
+        if (feature.id === 'rentalPrintButton') {
+          appendRentalPrintConfiguration(body, settings);
+        }
 
         if (feature.id === 'customerRegistrationFields') {
           appendCustomerRegistrationConfiguration(body, settings);

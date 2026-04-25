@@ -6,6 +6,7 @@ import {
   getAppRoomFieldValue,
   getAppRoomMultiselectValue,
 } from './app-room-fields';
+import { DEFAULT_SETTINGS, getSettings } from '../settings';
 
 const UI_WAIT_MS = 150;
 const PAGE_WAIT_MS = 10000;
@@ -49,13 +50,6 @@ const PRINT_CSS = `
     font: inherit;
   }
 
-  .rental-color-cell {
-    width: 1%;
-    min-width: 18px;
-    padding: 0;
-    white-space: nowrap;
-  }
-
   .print-cell-customer,
   .print-cell-name {
     width: 1%;
@@ -65,9 +59,15 @@ const PRINT_CSS = `
   .print-cell-rentalArticle {
     width: auto;
   }
+
+  .print-cell-name {
+    font-family: "Arial Black", Impact, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 900;
+  }
 `;
 
 type DetailPosition = {
+  rentalObject: string;
   rentalArticle: string;
   name: string;
   height: string;
@@ -81,6 +81,8 @@ type PrintRentalGroup = {
 
 export class RentalPrintFeature {
   private isPrinting = false;
+
+  private skipMietobjektPattern = DEFAULT_SETTINGS.rentalPrintSkipMietobjektPattern;
 
   mount(wrapper: HTMLElement) {
     syncPrintButton(wrapper, (event) => {
@@ -107,17 +109,12 @@ export class RentalPrintFeature {
     for (const group of groups) {
       for (const row of group.rows) {
         const tr = printWindow.document.createElement('tr');
-        const colorCell = printWindow.document.createElement('td');
-        colorCell.className = 'rental-color-cell';
-        colorCell.style.backgroundColor = group.color;
-        colorCell.style.borderTop = `10px solid ${group.color}`;
-        colorCell.setAttribute('aria-hidden', 'true');
-        tr.append(colorCell);
 
         for (const cell of row) {
           const td = printWindow.document.createElement('td');
           td.className = `print-cell-${cell.key}`;
           td.textContent = cell.value;
+          td.style.borderTop = `10px solid ${group.color}`;
           tr.append(td);
         }
 
@@ -320,6 +317,7 @@ export class RentalPrintFeature {
 
   private readDetailPosition(item: HTMLElement): DetailPosition {
     return {
+      rentalObject: getAppRoomMultiselectValue(getAppRoomFieldsetByLabel(item, 'Mietobjekt')),
       rentalArticle: getAppRoomMultiselectValue(getAppRoomFieldsetByLabel(item, 'Mietartikel')),
       name:
         normalizeText(item.querySelector<HTMLInputElement>('input[name="rental.object.fields.name"]')?.value) ||
@@ -329,7 +327,24 @@ export class RentalPrintFeature {
     };
   }
 
+  private shouldSkipDetailPosition(position: DetailPosition) {
+    if (!this.skipMietobjektPattern) {
+      return false;
+    }
+
+    try {
+      return new RegExp(this.skipMietobjektPattern).test(position.rentalObject);
+    } catch (error) {
+      console.error('Invalid rental print Mietobjekt skip pattern.', error);
+      return false;
+    }
+  }
+
   private detailPositionToPrintRow(customerName: string, position: DetailPosition): PrintRow | null {
+    if (this.shouldSkipDetailPosition(position)) {
+      return null;
+    }
+
     const nameColumn = this.formatNameColumn(position.name, position.height, position.weight);
     if (!position.rentalArticle && !nameColumn) {
       return null;
@@ -409,6 +424,9 @@ export class RentalPrintFeature {
     this.isPrinting = true;
 
     try {
+      const settings = await getSettings();
+      this.skipMietobjektPattern = settings.rentalPrintSkipMietobjektPattern;
+
       const groups = await this.collectPrintableRowsFromDetails();
       if (groups.length === 0) {
         window.alert('Keine druckbaren Werte gefunden.');

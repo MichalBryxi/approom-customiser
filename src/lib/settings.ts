@@ -225,6 +225,7 @@ export const CUSTOMER_REGISTRATION_FIELD_DEFINITIONS: CustomerRegistrationFieldD
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   extensionEnabled: true,
   rentalPrintButton: true,
+  rentalPrintSkipMietobjektPattern: '.*Helm.*',
   barcodeCheckIn: true,
   checkInQuantityWarning: true,
   printLabelsByCheckInQuantity: true,

@@ -10,6 +10,15 @@ import {
 const UI_WAIT_MS = 150;
 const PAGE_WAIT_MS = 10000;
 const POSITION_ITEM_SELECTOR = '.list-group.mb-2 > .list-group-item';
+const RENTAL_GROUP_COLORS = [
+  '#ff0000',
+  '#0000ff',
+  '#008000',
+  '#00ffff',
+  '#ff00ff',
+  '#ffff00',
+  '#000000',
+];
 const PRINT_CSS = `
   @page {
     size: landscape;
@@ -26,8 +35,9 @@ const PRINT_CSS = `
 
   table {
     width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 6px 8px;
+    table-layout: auto;
     font: inherit;
   }
 
@@ -38,6 +48,23 @@ const PRINT_CSS = `
     overflow-wrap: anywhere;
     font: inherit;
   }
+
+  .rental-color-cell {
+    width: 1%;
+    min-width: 18px;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .print-cell-customer,
+  .print-cell-name {
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  .print-cell-rentalArticle {
+    width: auto;
+  }
 `;
 
 type DetailPosition = {
@@ -45,6 +72,11 @@ type DetailPosition = {
   name: string;
   height: string;
   weight: string;
+};
+
+type PrintRentalGroup = {
+  color: string;
+  rows: PrintRow[];
 };
 
 export class RentalPrintFeature {
@@ -58,7 +90,7 @@ export class RentalPrintFeature {
     });
   }
 
-  private renderPrintPreview(printWindow: Window, rows: PrintRow[]) {
+  private renderPrintPreview(printWindow: Window, groups: PrintRentalGroup[]) {
     const { document: printDocument } = printWindow;
 
     printDocument.open();
@@ -72,16 +104,25 @@ export class RentalPrintFeature {
     const table = printWindow.document.createElement('table');
     const tbody = printWindow.document.createElement('tbody');
 
-    for (const row of rows) {
-      const tr = printWindow.document.createElement('tr');
+    for (const group of groups) {
+      for (const row of group.rows) {
+        const tr = printWindow.document.createElement('tr');
+        const colorCell = printWindow.document.createElement('td');
+        colorCell.className = 'rental-color-cell';
+        colorCell.style.backgroundColor = group.color;
+        colorCell.style.borderTop = `10px solid ${group.color}`;
+        colorCell.setAttribute('aria-hidden', 'true');
+        tr.append(colorCell);
 
-      for (const cell of row) {
-        const td = printWindow.document.createElement('td');
-        td.textContent = cell.value;
-        tr.append(td);
+        for (const cell of row) {
+          const td = printWindow.document.createElement('td');
+          td.className = `print-cell-${cell.key}`;
+          td.textContent = cell.value;
+          tr.append(td);
+        }
+
+        tbody.append(tr);
       }
-
-      tbody.append(tr);
     }
 
     table.append(tbody);
@@ -338,7 +379,7 @@ export class RentalPrintFeature {
       return [];
     }
 
-    const rows: PrintRow[] = [];
+    const groups: PrintRentalGroup[] = [];
 
     for (let rowIndex = 0; rowIndex < initialRows.length; rowIndex += 1) {
       const currentRow = await this.waitForCondition(() => this.getListRows()[rowIndex], PAGE_WAIT_MS);
@@ -347,11 +388,17 @@ export class RentalPrintFeature {
       await this.clickEditAction(currentRow);
       await this.waitForDetailPage(previousUrl);
       await this.expandDetailPositions();
-      rows.push(...this.extractDetailRows());
+      const rows = this.extractDetailRows();
+      if (rows.length > 0) {
+        groups.push({
+          color: RENTAL_GROUP_COLORS[rowIndex % RENTAL_GROUP_COLORS.length],
+          rows,
+        });
+      }
       await this.returnToListPage(listUrl);
     }
 
-    return rows;
+    return groups;
   }
 
   private async handlePrintClick() {
@@ -362,8 +409,8 @@ export class RentalPrintFeature {
     this.isPrinting = true;
 
     try {
-      const rows = await this.collectPrintableRowsFromDetails();
-      if (rows.length === 0) {
+      const groups = await this.collectPrintableRowsFromDetails();
+      if (groups.length === 0) {
         window.alert('Keine druckbaren Werte gefunden.');
         return;
       }
@@ -374,7 +421,7 @@ export class RentalPrintFeature {
         return;
       }
 
-      this.renderPrintPreview(printWindow, rows);
+      this.renderPrintPreview(printWindow, groups);
       await this.startPrint(printWindow);
     } catch (error) {
       console.error(error);

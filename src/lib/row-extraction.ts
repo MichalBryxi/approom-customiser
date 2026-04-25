@@ -1,8 +1,5 @@
 import type { PrintJobEntry, PrintRow } from './types';
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
+import { normalizeText } from './text';
 
 function isElementVisible(element: Element) {
   if (!(element instanceof HTMLElement)) {

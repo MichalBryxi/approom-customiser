@@ -1,13 +1,10 @@
 import { logErpDebug } from './feature-activation-log';
+import { normalizeText } from '../text';
 
 type PrintQuantitySnapshot = Array<{
   artId: string;
   quantity: string;
 }>;
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
 
 function buildPrintQueue(snapshot: PrintQuantitySnapshot) {
   const queue = new Map<string, string[]>();

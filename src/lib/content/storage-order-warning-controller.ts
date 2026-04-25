@@ -1,11 +1,8 @@
 import { CHECK_IN_STATUS_COLORS } from '../check-in-status-colors';
+import { normalizeText } from '../text';
 
 const WARNING_ROW_ATTRIBUTE = 'data-app-room-check-in-warning';
 const COMPLETE_ROW_ATTRIBUTE = 'data-app-room-check-in-complete';
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
 
 function parseNumericInputValue(input: HTMLInputElement | null) {
   const parsed = Number(input?.value ?? '');

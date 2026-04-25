@@ -1,10 +1,44 @@
 import { syncPrintButton } from './menu-button';
 import type { PrintRow } from '../types';
+import { normalizeText } from '../text';
+import {
+  getAppRoomFieldsetByLabel,
+  getAppRoomFieldValue,
+  getAppRoomMultiselectValue,
+} from './app-room-fields';
 
 const UI_WAIT_MS = 150;
 const PAGE_WAIT_MS = 10000;
-const PRINT_DELAY_MS = 50;
 const POSITION_ITEM_SELECTOR = '.list-group.mb-2 > .list-group-item';
+const PRINT_CSS = `
+  @page {
+    size: landscape;
+  }
+
+  html,
+  body {
+    margin: 12px;
+    color: #111827;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font: inherit;
+  }
+
+  td {
+    border: 1px solid #d1d5db;
+    padding: 18px 10px;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    font: inherit;
+  }
+`;
 
 type DetailPosition = {
   rentalArticle: string;
@@ -25,20 +59,17 @@ export class RentalPrintFeature {
   }
 
   private renderPrintPreview(printWindow: Window, rows: PrintRow[]) {
-    printWindow.document.title = 'Druckvorschau';
-    const style = printWindow.document.createElement('style');
-    style.textContent = '@page { size: landscape; }';
-    printWindow.document.head.append(style);
-    printWindow.document.body.innerHTML = '';
-    printWindow.document.body.style.margin = '12px';
-    printWindow.document.body.style.fontFamily =
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    printWindow.document.body.style.fontSize = '20px';
-    printWindow.document.body.style.fontWeight = '700';
-    const table = printWindow.document.createElement('table');
-    table.style.width = '100%';
-    table.style.borderCollapse = 'collapse';
+    const { document: printDocument } = printWindow;
 
+    printDocument.open();
+    printDocument.write('<!doctype html><html><head><title>Druckvorschau</title></head><body></body></html>');
+    printDocument.close();
+
+    const style = printDocument.createElement('style');
+    style.textContent = PRINT_CSS;
+    printDocument.head.append(style);
+
+    const table = printWindow.document.createElement('table');
     const tbody = printWindow.document.createElement('tbody');
 
     for (const row of rows) {
@@ -47,9 +78,6 @@ export class RentalPrintFeature {
       for (const cell of row) {
         const td = printWindow.document.createElement('td');
         td.textContent = cell.value;
-        td.style.border = '1px solid #d1d5db';
-        td.style.padding = '18px 10px';
-        td.style.verticalAlign = 'top';
         tr.append(td);
       }
 
@@ -57,10 +85,10 @@ export class RentalPrintFeature {
     }
 
     table.append(tbody);
-    printWindow.document.body.append(table);
+    printDocument.body.append(table);
   }
 
-  private startPrint(printWindow: Window) {
+  private async startPrint(printWindow: Window) {
     printWindow.addEventListener(
       'afterprint',
       () => {
@@ -70,19 +98,18 @@ export class RentalPrintFeature {
     );
 
     printWindow.focus();
-    printWindow.setTimeout(() => {
-      printWindow.print();
-    }, PRINT_DELAY_MS);
+    await new Promise<void>((resolve) => {
+      printWindow.requestAnimationFrame(() => {
+        printWindow.requestAnimationFrame(() => resolve());
+      });
+    });
+    printWindow.print();
   }
 
   private waitForUiUpdate() {
     return new Promise<void>((resolve) => {
       window.setTimeout(resolve, UI_WAIT_MS);
     });
-  }
-
-  private normalizeText(value: string | null | undefined) {
-    return value?.replace(/\s+/g, ' ').trim() ?? '';
   }
 
   private isVisible(element: Element) {
@@ -127,7 +154,7 @@ export class RentalPrintFeature {
 
   private findEditButton(scope: ParentNode = document) {
     return Array.from(scope.querySelectorAll<HTMLButtonElement>('button')).find((button) => {
-      return this.isVisible(button) && this.normalizeText(button.textContent).includes('Bearbeiten');
+      return this.isVisible(button) && normalizeText(button.textContent).includes('Bearbeiten');
     });
   }
 
@@ -137,9 +164,9 @@ export class RentalPrintFeature {
     );
 
     const likelyMenuButtons = buttons.filter((button) => {
-      const label = this.normalizeText(button.textContent);
-      const title = this.normalizeText(button.title);
-      const ariaLabel = this.normalizeText(button.getAttribute('aria-label'));
+      const label = normalizeText(button.textContent);
+      const title = normalizeText(button.title);
+      const ariaLabel = normalizeText(button.getAttribute('aria-label'));
 
       return (
         title.includes('Aktion') ||
@@ -192,58 +219,13 @@ export class RentalPrintFeature {
     await this.waitForCondition(() => (this.hasRentalPositionList() ? true : null), PAGE_WAIT_MS);
   }
 
-  private getLegendLabel(legend: HTMLLegendElement | null) {
-    return this.normalizeText(legend?.textContent).replace(/\*/g, '').trim();
-  }
-
-  private getFieldsetByLabel(scope: ParentNode, label: string) {
-    const candidates: Array<{ fieldset: HTMLFieldSetElement; label: string }> = [];
-
-    for (const fieldset of scope.querySelectorAll<HTMLFieldSetElement>('fieldset')) {
-      candidates.push({
-        fieldset,
-        label: this.getLegendLabel(fieldset.querySelector('legend')),
-      });
-    }
-
-    for (const legend of scope.querySelectorAll<HTMLLegendElement>('legend')) {
-      const nextElement = legend.nextElementSibling;
-      if (nextElement instanceof HTMLFieldSetElement) {
-        candidates.push({
-          fieldset: nextElement,
-          label: this.getLegendLabel(legend),
-        });
-      }
-    }
-
-    const exact = candidates.find((candidate) => candidate.label === label);
-    if (exact) {
-      return exact.fieldset;
-    }
-
-    return candidates.find((candidate) => candidate.label.includes(label))?.fieldset;
-  }
-
-  private getMultiselectValue(fieldset: HTMLFieldSetElement | undefined) {
-    return this.normalizeText(fieldset?.querySelector<HTMLElement>('.multiselect__single')?.textContent);
-  }
-
-  private getInputValue(fieldset: HTMLFieldSetElement | undefined) {
-    const input = fieldset?.querySelector<HTMLInputElement>('input');
-    return this.normalizeText(input?.value) || this.normalizeText(input?.getAttribute('aria-valuenow'));
-  }
-
-  private getFieldValue(scope: ParentNode, label: string) {
-    return this.getInputValue(this.getFieldsetByLabel(scope, label));
-  }
-
   private getNumericFieldValue(scope: ParentNode, fieldName: string, label: string) {
     return (
-      this.normalizeText(
+      normalizeText(
         scope
           .querySelector<HTMLInputElement>(`span[name="${fieldName}"] input`)
           ?.getAttribute('aria-valuenow'),
-      ) || this.getFieldValue(scope, label)
+      ) || getAppRoomFieldValue(scope, label)
     );
   }
 
@@ -254,13 +236,13 @@ export class RentalPrintFeature {
   }
 
   private getCustomerName() {
-    const customerFieldset = this.getFieldsetByLabel(document, 'Kunde');
-    const customerValue = this.getMultiselectValue(customerFieldset);
+    const customerFieldset = getAppRoomFieldsetByLabel(document, 'Kunde');
+    const customerValue = getAppRoomMultiselectValue(customerFieldset);
     if (customerValue) {
       return customerValue.split(',')[0]?.trim() ?? customerValue;
     }
 
-    const companyText = this.normalizeText(
+    const companyText = normalizeText(
       document.querySelector<HTMLElement>('[title^="Firma:"] .medium-text')?.textContent,
     );
 
@@ -268,7 +250,7 @@ export class RentalPrintFeature {
       return companyText;
     }
 
-    const companyTitle = this.normalizeText(document.querySelector<HTMLElement>('[title^="Firma:"]')?.title);
+    const companyTitle = normalizeText(document.querySelector<HTMLElement>('[title^="Firma:"]')?.title);
     if (companyTitle) {
       return companyTitle.replace(/^Firma:\s*/, '').trim();
     }
@@ -297,10 +279,10 @@ export class RentalPrintFeature {
 
   private readDetailPosition(item: HTMLElement): DetailPosition {
     return {
-      rentalArticle: this.getMultiselectValue(this.getFieldsetByLabel(item, 'Mietartikel')),
+      rentalArticle: getAppRoomMultiselectValue(getAppRoomFieldsetByLabel(item, 'Mietartikel')),
       name:
-        this.normalizeText(item.querySelector<HTMLInputElement>('input[name="rental.object.fields.name"]')?.value) ||
-        this.getFieldValue(item, 'Name'),
+        normalizeText(item.querySelector<HTMLInputElement>('input[name="rental.object.fields.name"]')?.value) ||
+        getAppRoomFieldValue(item, 'Name'),
       height: this.getNumericFieldValue(item, 'rental.object.fields.size', 'Körpergrösse'),
       weight: this.getNumericFieldValue(item, 'rental.object.fields.weight', 'Gewicht'),
     };
@@ -393,7 +375,7 @@ export class RentalPrintFeature {
       }
 
       this.renderPrintPreview(printWindow, rows);
-      this.startPrint(printWindow);
+      await this.startPrint(printWindow);
     } catch (error) {
       console.error(error);
       window.alert('Druckdaten konnten nicht aus den Reservierungsdetails gelesen werden.');

@@ -8,6 +8,7 @@ import type {
   CustomerRegistrationFieldId,
   ExtensionSettings,
 } from '../types';
+import { normalizeText } from '../text';
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
@@ -154,10 +155,6 @@ type OriginalPosition = {
   parent: HTMLElement;
   index: number;
 };
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
 
 function setText(element: HTMLElement, text: string) {
   if (element.textContent !== text) {

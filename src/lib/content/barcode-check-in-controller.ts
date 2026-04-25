@@ -1,13 +1,11 @@
+import { normalizeText } from '../text';
+
 const ROOT_SELECTOR = '[data-app-room-barcode-check-in="true"]';
 const START_BUTTON_SELECTOR = '[data-app-room-barcode-check-in-start="true"]';
 const ACTIVE_CONTROLS_SELECTOR = '[data-app-room-barcode-check-in-active="true"]';
 const INPUT_SELECTOR = '[data-app-room-barcode-check-in-input="true"]';
 const SCAN_DELAY_MS = 500;
 const CURRENT_ORDER_HEADING_ID = 'panel_current_order_step2';
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? '').replace(/\s+/g, ' ').trim();
-}
 
 function normalizeBarcode(value: string | null | undefined) {
   return normalizeText(value).toLowerCase().replace(/[^a-z0-9]/g, '');

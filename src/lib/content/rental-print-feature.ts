@@ -1,8 +1,9 @@
 import { syncPrintButton } from './menu-button';
-import { extractPrintableRowsFromTable } from '../row-extraction';
 import type { PrintRow } from '../types';
 
 export class RentalPrintFeature {
+  private isPrinting = false;
+
   mount(wrapper: HTMLElement) {
     syncPrintButton(wrapper, (event) => {
       event.preventDefault();
@@ -13,11 +14,15 @@ export class RentalPrintFeature {
 
   private renderPrintPreview(printWindow: Window, rows: PrintRow[]) {
     printWindow.document.title = 'Druckvorschau';
+    const style = printWindow.document.createElement('style');
+    style.textContent = '@page { size: landscape; }';
+    printWindow.document.head.append(style);
     printWindow.document.body.innerHTML = '';
     printWindow.document.body.style.margin = '12px';
     printWindow.document.body.style.fontFamily =
       '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    printWindow.document.body.style.fontSize = '12px';
+    printWindow.document.body.style.fontSize = '20px';
+    printWindow.document.body.style.fontWeight = '700';
     const table = printWindow.document.createElement('table');
     table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
@@ -31,7 +36,7 @@ export class RentalPrintFeature {
         const td = printWindow.document.createElement('td');
         td.textContent = cell.value;
         td.style.border = '1px solid #d1d5db';
-        td.style.padding = '16px 8px';
+        td.style.padding = '18px 10px';
         td.style.verticalAlign = 'top';
         tr.append(td);
       }
@@ -64,22 +69,199 @@ export class RentalPrintFeature {
     });
   }
 
-  private getExpandButton(row: HTMLTableRowElement) {
-    return row.querySelector<HTMLButtonElement>('td:nth-child(14) button');
+  private normalizeText(value: string | null | undefined) {
+    return value?.replace(/\s+/g, ' ').trim() ?? '';
   }
 
-  private isCollapsedExpandButton(button: HTMLButtonElement) {
-    return button.querySelector('i.fa-chevron-down') !== null;
+  private isVisible(element: Element) {
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
   }
 
-  private async expandRowsForPrint(table: HTMLTableElement) {
-    const rows = Array.from(table.tBodies[0]?.rows ?? []).filter((row): row is HTMLTableRowElement =>
-      row instanceof HTMLTableRowElement,
+  private waitForCondition<T>(
+    readValue: () => T | null | undefined | false,
+    timeoutMs = 8000,
+    intervalMs = 150,
+  ) {
+    const startedAt = Date.now();
+
+    return new Promise<T>((resolve, reject) => {
+      const poll = () => {
+        const value = readValue();
+        if (value) {
+          resolve(value);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs) {
+          reject(new Error('Timed out waiting for AppRoom UI.'));
+          return;
+        }
+
+        window.setTimeout(poll, intervalMs);
+      };
+
+      poll();
+    });
+  }
+
+  private getListRows() {
+    const table = document.querySelector<HTMLTableElement>('table');
+    return Array.from(table?.tBodies[0]?.rows ?? []).filter((row): row is HTMLTableRowElement =>
+      row instanceof HTMLTableRowElement && this.isVisible(row),
+    );
+  }
+
+  private findEditButton(scope: ParentNode = document) {
+    return Array.from(scope.querySelectorAll<HTMLButtonElement>('button')).find((button) => {
+      return this.isVisible(button) && this.normalizeText(button.textContent).includes('Bearbeiten');
+    });
+  }
+
+  private getActionMenuCandidates(row: HTMLTableRowElement) {
+    const buttons = Array.from(row.querySelectorAll<HTMLButtonElement>('button')).filter(
+      (button) => !button.disabled && this.isVisible(button),
     );
 
-    for (const row of rows) {
-      const expandButton = this.getExpandButton(row);
-      if (!expandButton || !this.isCollapsedExpandButton(expandButton)) {
+    const likelyMenuButtons = buttons.filter((button) => {
+      const label = this.normalizeText(button.textContent);
+      const title = this.normalizeText(button.title);
+      const ariaLabel = this.normalizeText(button.getAttribute('aria-label'));
+
+      return (
+        title.includes('Aktion') ||
+        ariaLabel.includes('Aktion') ||
+        button.matches('.dropdown-toggle, .dropdown-btn') ||
+        button.querySelector(
+          'i.fa-ellipsis-v, i.fa-ellipsis-vertical, i.fa-ellipsis-h, i.fa-bars, i.fa-list',
+        ) !== null ||
+        label === ''
+      );
+    });
+
+    return (likelyMenuButtons.length > 0 ? likelyMenuButtons : buttons).reverse();
+  }
+
+  private async clickEditAction(row: HTMLTableRowElement) {
+    row.scrollIntoView({ block: 'center' });
+    await this.waitForUiUpdate();
+
+    const directEditButton = this.findEditButton(row);
+    if (directEditButton) {
+      directEditButton.click();
+      return;
+    }
+
+    for (const candidate of this.getActionMenuCandidates(row)) {
+      candidate.click();
+      await this.waitForUiUpdate();
+
+      const editButton = this.findEditButton(row) ?? this.findEditButton(document);
+      if (editButton) {
+        editButton.click();
+        return;
+      }
+    }
+
+    throw new Error('Bearbeiten button not found for rental row.');
+  }
+
+  private hasRentalPositionList() {
+    return document.querySelector('.list-group.mb-2 .list-group-item') !== null;
+  }
+
+  private async waitForDetailPage(previousUrl: string) {
+    await this.waitForCondition(
+      () => (window.location.href !== previousUrl || this.hasRentalPositionList() ? true : null),
+      10000,
+    );
+
+    await this.waitForCondition(() => (this.hasRentalPositionList() ? true : null), 10000);
+  }
+
+  private getLegendLabel(legend: HTMLLegendElement | null) {
+    return this.normalizeText(legend?.textContent).replace(/\*/g, '').trim();
+  }
+
+  private labelMatches(legendText: string, label: string, exact: boolean) {
+    return exact ? legendText === label : legendText.includes(label);
+  }
+
+  private getFieldsetWithOwnLegend(scope: ParentNode, label: string, exact: boolean) {
+    return Array.from(scope.querySelectorAll<HTMLFieldSetElement>('fieldset')).find((fieldset) => {
+      return this.labelMatches(this.getLegendLabel(fieldset.querySelector('legend')), label, exact);
+    });
+  }
+
+  private getFieldsetAfterLegend(scope: ParentNode, label: string, exact: boolean) {
+    const legend = Array.from(scope.querySelectorAll<HTMLLegendElement>('legend')).find((candidate) => {
+      return this.labelMatches(this.getLegendLabel(candidate), label, exact);
+    });
+    const nextElement = legend?.nextElementSibling;
+    if (nextElement instanceof HTMLFieldSetElement) {
+      return nextElement;
+    }
+
+    return undefined;
+  }
+
+  private getFieldsetByLabel(scope: ParentNode, label: string) {
+    return (
+      this.getFieldsetWithOwnLegend(scope, label, true) ??
+      this.getFieldsetAfterLegend(scope, label, true) ??
+      this.getFieldsetWithOwnLegend(scope, label, false) ??
+      this.getFieldsetAfterLegend(scope, label, false)
+    );
+  }
+
+  private getMultiselectValue(fieldset: HTMLFieldSetElement | undefined) {
+    return this.normalizeText(fieldset?.querySelector<HTMLElement>('.multiselect__single')?.textContent);
+  }
+
+  private getInputValue(fieldset: HTMLFieldSetElement | undefined) {
+    const input = fieldset?.querySelector<HTMLInputElement>('input');
+    return this.normalizeText(input?.value) || this.normalizeText(input?.getAttribute('aria-valuenow'));
+  }
+
+  private formatNameColumn(name: string, height: string, weight: string) {
+    const formattedHeight = height ? `${height}cm` : '';
+    const formattedWeight = weight ? `${weight}kg` : '';
+    return [name, formattedHeight, formattedWeight].filter(Boolean).join(' / ');
+  }
+
+  private getCustomerName() {
+    const customerFieldset = this.getFieldsetByLabel(document, 'Kunde');
+    const customerValue = this.getMultiselectValue(customerFieldset);
+    if (customerValue) {
+      return customerValue.split(',')[0]?.trim() ?? customerValue;
+    }
+
+    const companyText = this.normalizeText(
+      document.querySelector<HTMLElement>('[title^="Firma:"] .medium-text')?.textContent,
+    );
+
+    if (companyText) {
+      return companyText;
+    }
+
+    const companyTitle = this.normalizeText(document.querySelector<HTMLElement>('[title^="Firma:"]')?.title);
+    if (companyTitle) {
+      return companyTitle.replace(/^Firma:\s*/, '').trim();
+    }
+
+    return '';
+  }
+
+  private async expandDetailPositions() {
+    const items = Array.from(document.querySelectorAll<HTMLElement>('.list-group.mb-2 > .list-group-item'));
+
+    for (const item of items) {
+      const expandButton = item
+        .querySelector<HTMLElement>('.pos-arrow button i.fa-chevron-down')
+        ?.closest<HTMLButtonElement>('button');
+
+      if (!expandButton) {
         continue;
       }
 
@@ -88,28 +270,112 @@ export class RentalPrintFeature {
     }
   }
 
-  private async handlePrintClick() {
-    const table = document.querySelector<HTMLTableElement>('table');
-    if (!table) {
+  private extractDetailRows() {
+    const customerName = this.getCustomerName();
+    const items = Array.from(document.querySelectorAll<HTMLElement>('.list-group.mb-2 > .list-group-item'));
+    const rows: PrintRow[] = [];
+
+    for (const item of items) {
+      const rentalArticle = this.getMultiselectValue(this.getFieldsetByLabel(item, 'Mietartikel'));
+      const name =
+        this.normalizeText(item.querySelector<HTMLInputElement>('input[name="rental.object.fields.name"]')?.value) ||
+        this.getInputValue(this.getFieldsetByLabel(item, 'Name'));
+      const height =
+        this.normalizeText(
+          item
+            .querySelector<HTMLInputElement>('span[name="rental.object.fields.size"] input')
+            ?.getAttribute('aria-valuenow'),
+        ) ||
+        this.getInputValue(this.getFieldsetByLabel(item, 'Körpergrösse'));
+      const weight =
+        this.normalizeText(
+          item
+            .querySelector<HTMLInputElement>('span[name="rental.object.fields.weight"] input')
+            ?.getAttribute('aria-valuenow'),
+        ) ||
+        this.getInputValue(this.getFieldsetByLabel(item, 'Gewicht'));
+      const nameColumn = this.formatNameColumn(name, height, weight);
+
+      if (!rentalArticle && !nameColumn) {
+        continue;
+      }
+
+      rows.push([
+        { key: 'customer', value: customerName },
+        { key: 'rentalArticle', value: rentalArticle },
+        { key: 'name', value: nameColumn },
+      ]);
+    }
+
+    return rows;
+  }
+
+  private async returnToListPage(listUrl: string) {
+    window.history.back();
+
+    await this.waitForCondition(() => {
+      if (window.location.href === listUrl && this.getListRows().length > 0) {
+        return true;
+      }
+
+      return this.getListRows().length > 0 && !this.hasRentalPositionList() ? true : null;
+    }, 10000);
+
+    await this.waitForUiUpdate();
+  }
+
+  private async collectPrintableRowsFromDetails() {
+    const listUrl = window.location.href;
+    const initialRows = this.getListRows();
+
+    if (initialRows.length === 0) {
       window.alert('Keine Tabelle gefunden.');
+      return [];
+    }
+
+    const rows: PrintRow[] = [];
+
+    for (let rowIndex = 0; rowIndex < initialRows.length; rowIndex += 1) {
+      const currentRow = await this.waitForCondition(() => this.getListRows()[rowIndex], 10000);
+      const previousUrl = window.location.href;
+
+      await this.clickEditAction(currentRow);
+      await this.waitForDetailPage(previousUrl);
+      await this.expandDetailPositions();
+      rows.push(...this.extractDetailRows());
+      await this.returnToListPage(listUrl);
+    }
+
+    return rows;
+  }
+
+  private async handlePrintClick() {
+    if (this.isPrinting) {
       return;
     }
 
-    await this.expandRowsForPrint(table);
+    this.isPrinting = true;
 
-    const rows = extractPrintableRowsFromTable(table);
-    if (rows.length === 0) {
-      window.alert('Keine druckbaren Werte gefunden.');
-      return;
+    try {
+      const rows = await this.collectPrintableRowsFromDetails();
+      if (rows.length === 0) {
+        window.alert('Keine druckbaren Werte gefunden.');
+        return;
+      }
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        window.alert('Druckfenster konnte nicht geöffnet werden.');
+        return;
+      }
+
+      this.renderPrintPreview(printWindow, rows);
+      this.startPrint(printWindow);
+    } catch (error) {
+      console.error(error);
+      window.alert('Druckdaten konnten nicht aus den Reservierungsdetails gelesen werden.');
+    } finally {
+      this.isPrinting = false;
     }
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      window.alert('Druckfenster konnte nicht geöffnet werden.');
-      return;
-    }
-
-    this.renderPrintPreview(printWindow, rows);
-    this.startPrint(printWindow);
   }
 }

@@ -24,7 +24,7 @@ export default defineConfig({
   webExt: {
     binaries: chromiumBinary
       ? {
-          chromium: chromiumBinary,
+          chrome: chromiumBinary,
         }
       : undefined,
   },

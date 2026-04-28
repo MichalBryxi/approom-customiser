@@ -11,7 +11,10 @@
     "clean": "wxt clean",
     "submit:init": "wxt submit init",
     "submit": "wxt submit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "release:patch": "npm version patch && pnpm build && pnpm zip",
+    "release:minor": "npm version minor && pnpm build && pnpm zip",
+    "release:major": "npm version major && pnpm build && pnpm zip"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.313",

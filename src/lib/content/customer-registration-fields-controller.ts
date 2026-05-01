@@ -17,8 +17,8 @@ const REQUIRED_FEEDBACK_ATTRIBUTE = 'data-app-room-required-feedback';
 const REQUIRED_STAR_ATTRIBUTE = 'data-app-room-required-star';
 const CHAR_BAR_ATTRIBUTE = 'data-app-room-char-bar';
 const NON_MANDATORY_FIELD_DEFAULTS = new Map<CustomerRegistrationFieldId, string>([
-  ['zip', '0000'],
-  ['city', '-'],
+  ['zip', '***'],
+  ['city', '***'],
 ]);
 const PHONE_FIELD_PREFILL = '+';
 const PHONE_FIELDS: CustomerRegistrationFieldId[] = ['mobile', 'phone_private', 'phone_work'];

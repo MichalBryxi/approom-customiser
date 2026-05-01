@@ -6,15 +6,25 @@ const POLL_INTERVAL_MS = 200;
 
 type AutomationStep = 'click-new-entry';
 
+export type RentalDuration = 'halbtag' | '1-tag' | '2-tage';
+
+const DURATION_BUTTON_LABEL: Record<RentalDuration, string> = {
+  halbtag: 'Halbtag',
+  '1-tag': '1 Tag',
+  '2-tage': '2 Tage',
+};
+
 export type RegistrationToRentalState = {
   step: AutomationStep;
   customerFirstname: string;
   customerLastname: string;
+  duration: RentalDuration;
 };
 
 export function saveRegistrationToRentalState(
   customerFirstname: string,
   customerLastname: string,
+  duration: RentalDuration,
 ) {
   getTopStorage().setItem(
     STATE_KEY,
@@ -22,6 +32,7 @@ export function saveRegistrationToRentalState(
       step: 'click-new-entry',
       customerFirstname,
       customerLastname,
+      duration,
     } satisfies RegistrationToRentalState),
   );
 }
@@ -89,6 +100,15 @@ function findKundeMultiselect(): HTMLElement | null {
   return fieldset?.querySelector<HTMLElement>('.multiselect') ?? null;
 }
 
+function findDurationButton(duration: RentalDuration): HTMLButtonElement | null {
+  const label = DURATION_BUTTON_LABEL[duration];
+  return (
+    Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+      (btn) => btn.textContent?.trim() === label,
+    ) ?? null
+  );
+}
+
 async function handleClickNewEntry(state: RegistrationToRentalState) {
   const button = await waitForElement(findNewEntryButton);
   if (!button) {
@@ -136,11 +156,14 @@ async function handleClickNewEntry(state: RegistrationToRentalState) {
     return items[0]?.querySelector<HTMLElement>('.multiselect__option') ?? null;
   }, 5000);
 
-  clearState();
-
   if (firstOption) {
     firstOption.click();
   }
+
+  // Click the matching duration button.
+  const durationButton = await waitForElement(() => findDurationButton(state.duration), 3000);
+  clearState();
+  durationButton?.click();
 }
 
 export class RegistrationToRentalAutomation {
@@ -163,9 +186,7 @@ export class RegistrationToRentalAutomation {
       void handleClickNewEntry(state).finally(() => {
         this.inProgress = false;
       });
-      return;
     }
-
   };
 
   start() {

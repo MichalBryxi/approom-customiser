@@ -37,8 +37,8 @@ export class RegistrationToRentalController {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.setAttribute(BUTTON_ATTRIBUTE, 'true');
-    btn.className = submitButton.className;
-    btn.style.marginLeft = '0.5rem';
+    btn.className = submitButton.className.replace('btn-primary', 'btn-success');
+    btn.style.marginLeft = '1rem';
     btn.textContent = BUTTON_LABELS[getLanguage()];
 
     btn.addEventListener('click', () => {

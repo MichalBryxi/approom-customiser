@@ -16,7 +16,7 @@ export function saveRegistrationToRentalState(
   customerFirstname: string,
   customerLastname: string,
 ) {
-  sessionStorage.setItem(
+  getTopStorage().setItem(
     STATE_KEY,
     JSON.stringify({
       step: 'redirect-to-rental',
@@ -26,9 +26,17 @@ export function saveRegistrationToRentalState(
   );
 }
 
+function getTopStorage(): Storage {
+  try {
+    return window.top?.sessionStorage ?? sessionStorage;
+  } catch {
+    return sessionStorage;
+  }
+}
+
 function getState(): RegistrationToRentalState | null {
   try {
-    const raw = sessionStorage.getItem(STATE_KEY);
+    const raw = getTopStorage().getItem(STATE_KEY);
     return raw ? (JSON.parse(raw) as RegistrationToRentalState) : null;
   } catch {
     return null;
@@ -36,11 +44,11 @@ function getState(): RegistrationToRentalState | null {
 }
 
 function setState(state: RegistrationToRentalState) {
-  sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
+  getTopStorage().setItem(STATE_KEY, JSON.stringify(state));
 }
 
 function clearState() {
-  sessionStorage.removeItem(STATE_KEY);
+  getTopStorage().removeItem(STATE_KEY);
 }
 
 function waitForElement<T extends Element>(

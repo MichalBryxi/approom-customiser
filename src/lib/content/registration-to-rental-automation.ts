@@ -83,7 +83,7 @@ function findKundeMultiselect(): HTMLElement | null {
 
 async function handleRedirectToRental(state: RegistrationToRentalState) {
   setState({ ...state, step: 'click-new-entry' });
-  location.assign('/rental/rent');
+  (window.top ?? window).location.assign('/rental/rent');
 }
 
 async function handleClickNewEntry(state: RegistrationToRentalState) {

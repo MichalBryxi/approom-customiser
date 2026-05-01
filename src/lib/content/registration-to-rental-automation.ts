@@ -4,7 +4,7 @@ const STATE_KEY = 'approom-reg-to-rental';
 const STEP_TIMEOUT_MS = 8000;
 const POLL_INTERVAL_MS = 200;
 
-type AutomationStep = 'redirect-to-rental' | 'click-new-entry' | 'fill-customer';
+type AutomationStep = 'click-new-entry' | 'fill-customer';
 
 export type RegistrationToRentalState = {
   step: AutomationStep;
@@ -19,11 +19,15 @@ export function saveRegistrationToRentalState(
   getTopStorage().setItem(
     STATE_KEY,
     JSON.stringify({
-      step: 'redirect-to-rental',
+      step: 'click-new-entry',
       customerFirstname,
       customerLastname,
     } satisfies RegistrationToRentalState),
   );
+}
+
+export function clearRegistrationToRentalState() {
+  getTopStorage().removeItem(STATE_KEY);
 }
 
 function getTopStorage(): Storage {
@@ -87,11 +91,6 @@ function findNewEntryButton(): HTMLButtonElement | null {
 function findKundeMultiselect(): HTMLElement | null {
   const fieldset = getAppRoomFieldsetByLabel(document, 'Kunde');
   return fieldset?.querySelector<HTMLElement>('.multiselect') ?? null;
-}
-
-async function handleRedirectToRental(state: RegistrationToRentalState) {
-  setState({ ...state, step: 'click-new-entry' });
-  (window.top ?? window).location.assign('/rental/rent');
 }
 
 async function handleClickNewEntry(state: RegistrationToRentalState) {
@@ -163,14 +162,6 @@ export class RegistrationToRentalAutomation {
     }
 
     const path = location.pathname;
-
-    if (state.step === 'redirect-to-rental' && path === '/customer_registration/result') {
-      this.inProgress = true;
-      void handleRedirectToRental(state).finally(() => {
-        this.inProgress = false;
-      });
-      return;
-    }
 
     if (state.step === 'click-new-entry' && path === '/rental/rent') {
       this.inProgress = true;

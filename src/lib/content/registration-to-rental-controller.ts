@@ -1,6 +1,12 @@
-import { saveRegistrationToRentalState } from './registration-to-rental-automation';
+import {
+  clearRegistrationToRentalState,
+  saveRegistrationToRentalState,
+} from './registration-to-rental-automation';
 
 const BUTTON_ATTRIBUTE = 'data-app-room-reg-to-rental';
+const RESULT_PATH = '/customer_registration/result';
+const REDIRECT_TIMEOUT_MS = 15000;
+const POLL_INTERVAL_MS = 200;
 
 type Language = 'de' | 'en' | 'fr' | 'it';
 
@@ -43,13 +49,13 @@ export class RegistrationToRentalController {
     btn.textContent = BUTTON_LABELS[getLanguage()];
 
     btn.addEventListener('click', () => {
-      this.triggerWithRentalFlow(submitButton);
+      void this.triggerWithRentalFlow(submitButton);
     });
 
     wrapper.append(btn);
   }
 
-  private triggerWithRentalFlow(submitButton: HTMLButtonElement) {
+  private async triggerWithRentalFlow(submitButton: HTMLButtonElement) {
     const form = document.querySelector<HTMLFormElement>('app-registration form');
     const firstname =
       form?.querySelector<HTMLInputElement>('input[formcontrolname="firstname"]')?.value ?? '';
@@ -58,5 +64,20 @@ export class RegistrationToRentalController {
 
     saveRegistrationToRentalState(firstname, lastname);
     submitButton.click();
+
+    // Poll until the Angular SPA navigates to the result page, then redirect the
+    // top-level window to the rental page. This avoids relying on wxt:locationchange
+    // which may not fire reliably for all SPA navigations inside iframes.
+    const deadline = Date.now() + REDIRECT_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      if (location.pathname === RESULT_PATH) {
+        (window.top ?? window).location.assign('/rental/rent');
+        return;
+      }
+    }
+
+    // Registration didn't complete within the timeout — clear the stale state.
+    clearRegistrationToRentalState();
   }
 }

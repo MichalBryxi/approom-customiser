@@ -14,10 +14,14 @@ const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
 const EXTRA_SECTION_CONTENT_ATTRIBUTE = 'data-app-room-customer-registration-extra-content';
 const REQUIRED_FEEDBACK_ATTRIBUTE = 'data-app-room-required-feedback';
+const REQUIRED_STAR_ATTRIBUTE = 'data-app-room-required-star';
+const CHAR_BAR_ATTRIBUTE = 'data-app-room-char-bar';
 const NON_MANDATORY_FIELD_DEFAULTS = new Map<CustomerRegistrationFieldId, string>([
   ['zip', '0000'],
   ['city', '-'],
 ]);
+const PHONE_FIELD_PREFILL = '+';
+const PHONE_FIELDS: CustomerRegistrationFieldId[] = ['mobile', 'phone_private', 'phone_work'];
 
 type SupportedLanguage = 'de' | 'en' | 'fr' | 'it';
 
@@ -87,6 +91,13 @@ const EXTRA_LABELS: Record<SupportedLanguage, string> = {
   en: 'Extra',
   fr: 'Extra',
   it: 'Extra',
+};
+
+const CHAR_BAR_LABELS: Record<SupportedLanguage, string> = {
+  de: 'Tastatur',
+  en: 'Keyboard',
+  fr: 'Clavier',
+  it: 'Tastiera',
 };
 
 const REQUIRED_MESSAGES: Record<SupportedLanguage, FieldCopy> = {
@@ -162,6 +173,24 @@ function setText(element: HTMLElement, text: string) {
   }
 }
 
+function applyLabelContent(element: HTMLElement, text: string, mandatory: boolean) {
+  const textNode = element.firstChild?.nodeType === Node.TEXT_NODE ? element.firstChild : null;
+  const existingStar = element.querySelector(`[${REQUIRED_STAR_ATTRIBUTE}]`);
+
+  if (textNode?.textContent === text && !!existingStar === mandatory) {
+    return;
+  }
+
+  element.textContent = text;
+  if (mandatory) {
+    const star = document.createElement('span');
+    star.setAttribute(REQUIRED_STAR_ATTRIBUTE, 'true');
+    star.style.color = 'red';
+    star.textContent = ' *';
+    element.append(star);
+  }
+}
+
 function getSelectedLanguage(): SupportedLanguage {
   const selectedLanguage =
     document
@@ -202,17 +231,17 @@ function getLabel(input: HTMLInputElement | null) {
   return document.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(id)}"]`);
 }
 
-function ensureLabel(input: HTMLInputElement, text: string) {
+function ensureLabel(input: HTMLInputElement, text: string, mandatory: boolean) {
   const existingLabel = getLabel(input);
   if (existingLabel) {
-    setText(existingLabel, text);
+    applyLabelContent(existingLabel, text, mandatory);
     return existingLabel;
   }
 
   const label = document.createElement('label');
   label.className = 'mb-1';
   label.htmlFor = input.id;
-  label.textContent = text;
+  applyLabelContent(label, text, mandatory);
   input.before(label);
   return label;
 }
@@ -255,6 +284,8 @@ export class CustomerRegistrationFieldsController {
   private active = false;
 
   private form: HTMLFormElement | null = null;
+
+  private lastFocusedInput: HTMLInputElement | null = null;
 
   private formObserver: MutationObserver | null = null;
 
@@ -352,6 +383,7 @@ export class CustomerRegistrationFieldsController {
 
   private detach() {
     this.active = false;
+    this.lastFocusedInput = null;
     this.unwatchSettings.forEach((unwatch) => unwatch());
     this.unwatchSettings = [];
     this.pageObserver?.disconnect();
@@ -365,6 +397,8 @@ export class CustomerRegistrationFieldsController {
 
     if (this.form) {
       this.form.removeEventListener('submit', this.handleSubmit, true);
+      this.form.removeEventListener('focusin', this.handleFocusIn);
+      this.form.querySelector(`[${CHAR_BAR_ATTRIBUTE}]`)?.remove();
       this.form = null;
     }
 
@@ -394,10 +428,90 @@ export class CustomerRegistrationFieldsController {
       this.configureLabels();
       this.configureRequiredFields();
       this.applyNonMandatoryDefaults();
+      this.applyPhonePrefills();
+      this.ensureCharBar();
     } finally {
       this.applying = false;
     }
   }
+
+  private ensureCharBar() {
+    if (!this.form || this.form.querySelector(`[${CHAR_BAR_ATTRIBUTE}]`)) {
+      return;
+    }
+
+    const bar = document.createElement('div');
+    bar.setAttribute(CHAR_BAR_ATTRIBUTE, 'true');
+    bar.className = 'd-flex mb-3';
+    bar.style.gap = '0.5rem';
+
+    for (const char of ['@', '+']) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline-secondary btn-lg';
+      btn.textContent = char;
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
+      btn.addEventListener('click', () => {
+        this.insertChar(char);
+      });
+      bar.append(btn);
+    }
+
+    const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const anchor = submitButton?.closest('.form-group') ?? submitButton;
+    if (anchor) {
+      anchor.before(bar);
+    } else {
+      this.form.append(bar);
+    }
+
+    this.form.addEventListener('focusin', this.handleFocusIn);
+  }
+
+  private insertChar(char: string) {
+    const input =
+      document.activeElement instanceof HTMLInputElement
+        ? document.activeElement
+        : this.lastFocusedInput;
+    if (!input) {
+      return;
+    }
+
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    input.value = `${input.value.slice(0, start)}${char}${input.value.slice(end)}`;
+    input.selectionStart = start + char.length;
+    input.selectionEnd = start + char.length;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.focus();
+  }
+
+  private applyPhonePrefills() {
+    for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
+      if (!PHONE_FIELDS.includes(field.id)) {
+        continue;
+      }
+
+      const input = getPrimaryInput(field);
+      if (input && normalizeText(input.value) === '') {
+        setInputValue(input, PHONE_FIELD_PREFILL);
+      }
+    }
+  }
+
+  private readonly handleFocusIn = (event: FocusEvent) => {
+    const target = event.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.type !== 'radio' &&
+      target.type !== 'checkbox'
+    ) {
+      this.lastFocusedInput = target;
+    }
+  };
 
   private getLanguage() {
     return getSelectedLanguage();
@@ -410,11 +524,6 @@ export class CustomerRegistrationFieldsController {
     return override || FIELD_LABELS[language][field.id];
   }
 
-  private getFieldLabelWithRequiredMark(field: CustomerRegistrationFieldDefinition) {
-    const label = this.getFieldLabel(field);
-    return this.settings[field.mandatorySetting] ? `${label} *` : label;
-  }
-
   private configureLabels() {
     for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
       const input = getPrimaryInput(field);
@@ -423,14 +532,15 @@ export class CustomerRegistrationFieldsController {
       }
 
       const fieldsetLegend = input.closest('fieldset')?.querySelector<HTMLElement>('legend');
-      const labelText = this.getFieldLabelWithRequiredMark(field);
+      const labelText = this.getFieldLabel(field);
+      const mandatory = this.settings[field.mandatorySetting];
 
       if (fieldsetLegend) {
-        setText(fieldsetLegend, labelText);
+        applyLabelContent(fieldsetLegend, labelText, mandatory);
         continue;
       }
 
-      ensureLabel(input, labelText);
+      ensureLabel(input, labelText, mandatory);
     }
 
     this.updateExtraSectionSummary();
@@ -478,6 +588,7 @@ export class CustomerRegistrationFieldsController {
     if (summary) {
       setText(summary, EXTRA_LABELS[this.getLanguage()]);
     }
+
   }
 
   private getExtraSectionAnchor() {

@@ -249,7 +249,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   'customerRegistrationField.zip.mandatory': false,
   'customerRegistrationField.city.mandatory': false,
   'customerRegistrationField.mobile.mandatory': true,
-  'customerRegistrationField.mail.mandatory': false,
+  'customerRegistrationField.mail.mandatory': true,
   'customerRegistrationField.phone_private.mandatory': false,
   'customerRegistrationField.phone_work.mandatory': false,
   'customerRegistrationField.website.mandatory': false,

@@ -4,7 +4,7 @@ const STATE_KEY = 'approom-reg-to-rental';
 const STEP_TIMEOUT_MS = 8000;
 const POLL_INTERVAL_MS = 200;
 
-type AutomationStep = 'click-new-entry' | 'fill-customer';
+type AutomationStep = 'click-new-entry';
 
 export type RegistrationToRentalState = {
   step: AutomationStep;
@@ -45,10 +45,6 @@ function getState(): RegistrationToRentalState | null {
   } catch {
     return null;
   }
-}
-
-function setState(state: RegistrationToRentalState) {
-  getTopStorage().setItem(STATE_KEY, JSON.stringify(state));
 }
 
 function clearState() {
@@ -99,14 +95,13 @@ async function handleClickNewEntry(state: RegistrationToRentalState) {
     clearState();
     return;
   }
-  setState({ ...state, step: 'fill-customer' });
   button.click();
-}
 
-async function handleFillCustomer(state: RegistrationToRentalState) {
-  const multiselect = await waitForElement(findKundeMultiselect);
+  // Wait for the new-entry form to appear (SPA navigates to /rental/rent/new).
+  // Polling here avoids relying on wxt:locationchange for the SPA transition.
+  const multiselect = await waitForElement(findKundeMultiselect, 15000);
   if (!multiselect) {
-    // Not the right page yet — keep state so the next navigation can try.
+    clearState();
     return;
   }
 
@@ -171,12 +166,6 @@ export class RegistrationToRentalAutomation {
       return;
     }
 
-    if (state.step === 'fill-customer') {
-      this.inProgress = true;
-      void handleFillCustomer(state).finally(() => {
-        this.inProgress = false;
-      });
-    }
   };
 
   start() {

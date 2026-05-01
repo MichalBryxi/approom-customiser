@@ -6,12 +6,12 @@ const POLL_INTERVAL_MS = 200;
 
 type AutomationStep = 'click-new-entry';
 
-export type RentalDuration = 'halbtag' | '1-tag' | '2-tage';
+export type RentalDuration = 'halbtag' | '1_tag' | '2_tage';
 
-const DURATION_BUTTON_LABEL: Record<RentalDuration, string> = {
+const ERP_DURATION_LABEL: Record<RentalDuration, string> = {
   halbtag: 'Halbtag',
-  '1-tag': '1 Tag',
-  '2-tage': '2 Tage',
+  '1_tag': '1 Tag',
+  '2_tage': '2 Tage',
 };
 
 export type RegistrationToRentalState = {
@@ -101,7 +101,7 @@ function findKundeMultiselect(): HTMLElement | null {
 }
 
 function findDurationButton(duration: RentalDuration): HTMLButtonElement | null {
-  const label = DURATION_BUTTON_LABEL[duration];
+  const label = ERP_DURATION_LABEL[duration];
   return (
     Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
       (btn) => btn.textContent?.trim() === label,
@@ -110,6 +110,17 @@ function findDurationButton(duration: RentalDuration): HTMLButtonElement | null 
 }
 
 async function handleClickNewEntry(state: RegistrationToRentalState) {
+  const onUnload = () => clearState();
+  window.addEventListener('pagehide', onUnload, { once: true });
+
+  try {
+    await runClickNewEntry(state);
+  } finally {
+    window.removeEventListener('pagehide', onUnload);
+  }
+}
+
+async function runClickNewEntry(state: RegistrationToRentalState) {
   const button = await waitForElement(findNewEntryButton);
   if (!button) {
     clearState();

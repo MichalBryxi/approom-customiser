@@ -1,3 +1,4 @@
+import { getLanguage, t } from '../i18n';
 import {
   clearRegistrationToRentalState,
   saveRegistrationToRentalState,
@@ -9,25 +10,7 @@ const RESULT_PATH = '/customer_registration/result';
 const REDIRECT_TIMEOUT_MS = 15000;
 const POLL_INTERVAL_MS = 200;
 
-type Language = 'de' | 'en' | 'fr' | 'it';
-
-const DURATIONS: RentalDuration[] = ['halbtag', '1-tag', '2-tage'];
-
-const DURATION_LABELS: Record<RentalDuration, Record<Language, string>> = {
-  halbtag: { de: 'Halbtag', en: 'Half day', fr: 'Demi-journée', it: 'Mezza giornata' },
-  '1-tag': { de: '1 Tag', en: '1 day', fr: '1 jour', it: '1 giorno' },
-  '2-tage': { de: '2 Tage', en: '2 days', fr: '2 jours', it: '2 giorni' },
-};
-
-function getLanguage(): Language {
-  const lang =
-    document
-      .querySelector<HTMLElement>('ng-select.language-select .ng-value span[lang]')
-      ?.getAttribute('lang')
-      ?.toLowerCase() ?? document.documentElement.lang.toLowerCase();
-
-  return lang === 'en' || lang === 'fr' || lang === 'it' ? lang : 'de';
-}
+const DURATIONS: RentalDuration[] = ['halbtag', '1_tag', '2_tage'];
 
 export class RegistrationToRentalController {
   mount(wrapper: HTMLElement) {
@@ -42,18 +25,20 @@ export class RegistrationToRentalController {
       return;
     }
 
+    const lang = getLanguage();
+    const msgs = t(lang);
+
     wrapper.style.marginLeft = '1rem';
     wrapper.style.display = 'inline-flex';
     wrapper.style.gap = '0.5rem';
-
-    const lang = getLanguage();
+    wrapper.style.float = 'right';
 
     for (const duration of DURATIONS) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.setAttribute(BUTTON_ATTRIBUTE, duration);
       btn.className = submitButton.className.replace('btn-primary', 'btn-success');
-      btn.textContent = DURATION_LABELS[duration][lang];
+      btn.textContent = msgs.duration[duration];
 
       btn.addEventListener('click', () => {
         void this.triggerWithRentalFlow(submitButton, duration);

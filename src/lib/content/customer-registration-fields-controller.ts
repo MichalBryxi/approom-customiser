@@ -9,6 +9,7 @@ import type {
   ExtensionSettings,
 } from '../types';
 import { normalizeText } from '../text';
+import { getLanguage, t } from '../i18n';
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
@@ -23,141 +24,7 @@ const NON_MANDATORY_FIELD_DEFAULTS = new Map<CustomerRegistrationFieldId, string
 const PHONE_FIELD_PREFILL = '+';
 const PHONE_FIELDS: CustomerRegistrationFieldId[] = ['mobile', 'phone_private', 'phone_work'];
 
-type SupportedLanguage = 'de' | 'en' | 'fr' | 'it';
 
-type FieldCopy = Record<CustomerRegistrationFieldId, string>;
-
-const FIELD_LABELS: Record<SupportedLanguage, FieldCopy> = {
-  de: {
-    salutation: 'Anrede',
-    firstname: 'Vorname',
-    lastname: 'Name',
-    street: 'Strasse',
-    zip: 'PLZ',
-    city: 'Ort',
-    mobile: 'Tel. Mobile',
-    mail: 'E-Mail Adresse',
-    phone_private: 'Tel. Privat',
-    phone_work: 'Tel. Geschäft',
-    website: 'Website',
-    birthday: 'Geburtstag',
-  },
-  en: {
-    salutation: 'Salutation',
-    firstname: 'First name',
-    lastname: 'Last name',
-    street: 'Street',
-    zip: 'Postcode',
-    city: 'City',
-    mobile: 'Mobile phone',
-    mail: 'Email address',
-    phone_private: 'Private phone',
-    phone_work: 'Work phone',
-    website: 'Website',
-    birthday: 'Birthday',
-  },
-  fr: {
-    salutation: 'Civilité',
-    firstname: 'Prénom',
-    lastname: 'Nom',
-    street: 'Rue',
-    zip: 'NPA',
-    city: 'Lieu',
-    mobile: 'Tél. mobile',
-    mail: 'Adresse e-mail',
-    phone_private: 'Tél. privé',
-    phone_work: 'Tél. professionnel',
-    website: 'Site web',
-    birthday: 'Date de naissance',
-  },
-  it: {
-    salutation: 'Titolo',
-    firstname: 'Nome',
-    lastname: 'Cognome',
-    street: 'Via',
-    zip: 'NPA',
-    city: 'Località',
-    mobile: 'Cellulare',
-    mail: 'Indirizzo e-mail',
-    phone_private: 'Tel. privato',
-    phone_work: 'Tel. lavoro',
-    website: 'Sito web',
-    birthday: 'Data di nascita',
-  },
-};
-
-const EXTRA_LABELS: Record<SupportedLanguage, string> = {
-  de: 'Extra',
-  en: 'Extra',
-  fr: 'Extra',
-  it: 'Extra',
-};
-
-const CHAR_BAR_LABELS: Record<SupportedLanguage, string> = {
-  de: 'Tastatur',
-  en: 'Keyboard',
-  fr: 'Clavier',
-  it: 'Tastiera',
-};
-
-const REQUIRED_MESSAGES: Record<SupportedLanguage, FieldCopy> = {
-  de: {
-    salutation: 'Bitte wählen Sie eine Anrede aus.',
-    firstname: 'Bitte geben Sie einen Vornamen ein.',
-    lastname: 'Bitte geben Sie einen Namen ein.',
-    street: 'Bitte geben Sie eine Strasse ein.',
-    zip: 'Bitte geben Sie eine PLZ ein.',
-    city: 'Bitte geben Sie einen Ort ein.',
-    mobile: 'Bitte geben Sie eine Mobile-Telefonnummer ein.',
-    mail: 'Bitte geben Sie eine E-Mail Adresse ein.',
-    phone_private: 'Bitte geben Sie eine private Telefonnummer ein.',
-    phone_work: 'Bitte geben Sie eine geschäftliche Telefonnummer ein.',
-    website: 'Bitte geben Sie eine Website ein.',
-    birthday: 'Bitte geben Sie ein Geburtsdatum ein.',
-  },
-  en: {
-    salutation: 'Please choose a salutation.',
-    firstname: 'Please enter a first name.',
-    lastname: 'Please enter a last name.',
-    street: 'Please enter a street.',
-    zip: 'Please enter a postcode.',
-    city: 'Please enter a city.',
-    mobile: 'Please enter a mobile phone number.',
-    mail: 'Please enter an email address.',
-    phone_private: 'Please enter a private phone number.',
-    phone_work: 'Please enter a work phone number.',
-    website: 'Please enter a website.',
-    birthday: 'Please enter a birthday.',
-  },
-  fr: {
-    salutation: 'Veuillez choisir une civilité.',
-    firstname: 'Veuillez saisir un prénom.',
-    lastname: 'Veuillez saisir un nom.',
-    street: 'Veuillez saisir une rue.',
-    zip: 'Veuillez saisir un NPA.',
-    city: 'Veuillez saisir un lieu.',
-    mobile: 'Veuillez saisir un numéro de téléphone mobile.',
-    mail: 'Veuillez saisir une adresse e-mail.',
-    phone_private: 'Veuillez saisir un numéro de téléphone privé.',
-    phone_work: 'Veuillez saisir un numéro de téléphone professionnel.',
-    website: 'Veuillez saisir un site web.',
-    birthday: 'Veuillez saisir une date de naissance.',
-  },
-  it: {
-    salutation: 'Seleziona un titolo.',
-    firstname: 'Inserisci un nome.',
-    lastname: 'Inserisci un cognome.',
-    street: 'Inserisci una via.',
-    zip: 'Inserisci un NPA.',
-    city: 'Inserisci una località.',
-    mobile: 'Inserisci un numero di cellulare.',
-    mail: 'Inserisci un indirizzo e-mail.',
-    phone_private: 'Inserisci un numero di telefono privato.',
-    phone_work: 'Inserisci un numero di telefono di lavoro.',
-    website: 'Inserisci un sito web.',
-    birthday: 'Inserisci una data di nascita.',
-  },
-};
 
 type CustomerRegistrationFieldDefinition =
   (typeof CUSTOMER_REGISTRATION_FIELD_DEFINITIONS)[number];
@@ -191,20 +58,6 @@ function applyLabelContent(element: HTMLElement, text: string, mandatory: boolea
   }
 }
 
-function getSelectedLanguage(): SupportedLanguage {
-  const selectedLanguage =
-    document
-      .querySelector<HTMLElement>('ng-select.language-select .ng-value span[lang]')
-      ?.getAttribute('lang')
-      ?.toLowerCase() ?? document.documentElement.lang.toLowerCase();
-
-  return selectedLanguage === 'en' ||
-    selectedLanguage === 'fr' ||
-    selectedLanguage === 'it' ||
-    selectedLanguage === 'de'
-    ? selectedLanguage
-    : 'de';
-}
 
 function getControlInputs(field: CustomerRegistrationFieldDefinition) {
   return Array.from(
@@ -514,14 +367,14 @@ export class CustomerRegistrationFieldsController {
   };
 
   private getLanguage() {
-    return getSelectedLanguage();
+    return getLanguage();
   }
 
   private getFieldLabel(field: CustomerRegistrationFieldDefinition) {
     const language = this.getLanguage();
     const override = normalizeText(this.settings[field.labelSettings[language]]);
 
-    return override || FIELD_LABELS[language][field.id];
+    return override || t(language).fields[field.id];
   }
 
   private configureLabels() {
@@ -586,7 +439,7 @@ export class CustomerRegistrationFieldsController {
   private updateExtraSectionSummary() {
     const summary = this.getExtraSection()?.querySelector<HTMLElement>('summary');
     if (summary) {
-      setText(summary, EXTRA_LABELS[this.getLanguage()]);
+      setText(summary, t(this.getLanguage()).extra_section);
     }
 
   }
@@ -725,7 +578,7 @@ export class CustomerRegistrationFieldsController {
       return;
     }
 
-    const message = REQUIRED_MESSAGES[this.getLanguage()][field.id];
+    const message = t(this.getLanguage()).required[field.id];
     getControlInputs(field).forEach((fieldInput) => {
       fieldInput.setCustomValidity(message);
       fieldInput.classList.add('is-invalid');

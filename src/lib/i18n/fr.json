@@ -1,0 +1,37 @@
+{
+  "fields": {
+    "salutation": "Civilité",
+    "firstname": "Prénom",
+    "lastname": "Nom",
+    "street": "Rue",
+    "zip": "NPA",
+    "city": "Lieu",
+    "mobile": "Tél. mobile",
+    "mail": "Adresse e-mail",
+    "phone_private": "Tél. privé",
+    "phone_work": "Tél. professionnel",
+    "website": "Site web",
+    "birthday": "Date de naissance"
+  },
+  "required": {
+    "salutation": "Veuillez choisir une civilité.",
+    "firstname": "Veuillez saisir un prénom.",
+    "lastname": "Veuillez saisir un nom.",
+    "street": "Veuillez saisir une rue.",
+    "zip": "Veuillez saisir un NPA.",
+    "city": "Veuillez saisir un lieu.",
+    "mobile": "Veuillez saisir un numéro de téléphone mobile.",
+    "mail": "Veuillez saisir une adresse e-mail.",
+    "phone_private": "Veuillez saisir un numéro de téléphone privé.",
+    "phone_work": "Veuillez saisir un numéro de téléphone professionnel.",
+    "website": "Veuillez saisir un site web.",
+    "birthday": "Veuillez saisir une date de naissance."
+  },
+  "extra_section": "Extra",
+  "keyboard": "Clavier",
+  "duration": {
+    "halbtag": "Demi-journée",
+    "1_tag": "1 jour",
+    "2_tage": "2 jours"
+  }
+}

@@ -3,7 +3,8 @@ export type FeatureId =
   | 'barcodeCheckIn'
   | 'checkInQuantityWarning'
   | 'printLabelsByCheckInQuantity'
-  | 'customerRegistrationFields';
+  | 'customerRegistrationFields'
+  | 'registrationToRental';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -38,6 +39,7 @@ export type ExtensionSettings = {
   checkInQuantityWarning: boolean;
   printLabelsByCheckInQuantity: boolean;
   customerRegistrationFields: boolean;
+  registrationToRental: boolean;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &
   Record<CustomerRegistrationFieldLabelSettingId, string>;

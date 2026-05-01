@@ -230,6 +230,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   checkInQuantityWarning: true,
   printLabelsByCheckInQuantity: true,
   customerRegistrationFields: true,
+  registrationToRental: true,
   'customerRegistrationField.salutation.moveToExtra': false,
   'customerRegistrationField.firstname.moveToExtra': false,
   'customerRegistrationField.lastname.moveToExtra': false,
@@ -352,6 +353,13 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: 'Registrierungsfelder',
     description:
       'Passt die Kundenregistrierung über eine Feldmatrix an: Felder können in den Bereich Extra verschoben und als Pflichtfeld markiert werden.',
+  },
+  {
+    id: 'registrationToRental',
+    groupId: 'customer-registration',
+    label: 'Anmelden & Vermietung offen',
+    description:
+      'Fügt neben "Anmelden" einen zweiten Button hinzu, der nach der Registrierung direkt zur Neuen Vermietung wechselt und den Kunden vorausfüllt.',
   },
 ];
 

@@ -33,5 +33,6 @@
     "halbtag": "Half day",
     "1_tag": "1 day",
     "2_tage": "2 days"
-  }
+  },
+  "submitOnly": "Register only"
 }

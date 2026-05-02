@@ -33,5 +33,6 @@
     "halbtag": "Mezza giornata",
     "1_tag": "1 giorno",
     "2_tage": "2 giorni"
-  }
+  },
+  "submitOnly": "Solo registrare"
 }

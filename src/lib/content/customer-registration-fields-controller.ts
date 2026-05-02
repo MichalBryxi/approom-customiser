@@ -15,6 +15,7 @@ import { triggerRegistrationToRental } from './registration-to-rental-controller
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const RENTAL_BUTTON_ATTRIBUTE = 'data-app-room-rental-buttons';
+const SUBMIT_ORIGINAL_ATTRIBUTE = 'data-app-room-submit-original';
 const RENTAL_DURATIONS: RentalDuration[] = ['halbtag', '1_tag', '2_tage'];
 const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
 const EXTRA_SECTION_CONTENT_ATTRIBUTE = 'data-app-room-customer-registration-extra-content';
@@ -282,6 +283,12 @@ export class CustomerRegistrationFieldsController {
       this.form.removeEventListener('focusin', this.handleFocusIn);
       this.form.querySelector(`[${CHAR_BAR_ATTRIBUTE}]`)?.remove();
       this.form.querySelector(`[${RENTAL_BUTTON_ATTRIBUTE}]`)?.remove();
+      const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const original = submitButton?.getAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
+      if (submitButton && original !== null && original !== undefined) {
+        setText(submitButton, original);
+        submitButton.removeAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
+      }
       this.form = null;
     }
 
@@ -331,12 +338,20 @@ export class CustomerRegistrationFieldsController {
       return;
     }
 
+    const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
+
     if (!this.rentalButtonsEnabled) {
       this.form.querySelector(`[${RENTAL_BUTTON_ATTRIBUTE}]`)?.remove();
+      if (submitButton) {
+        const original = submitButton.getAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
+        if (original !== null) {
+          setText(submitButton, original);
+          submitButton.removeAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
+        }
+      }
       return;
     }
 
-    const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
     if (!submitButton) {
       return;
     }
@@ -367,7 +382,13 @@ export class CustomerRegistrationFieldsController {
       submitButton.after(container);
     }
 
+    // Save the ERP's original label once so we can restore it if the feature is disabled.
+    if (!submitButton.hasAttribute(SUBMIT_ORIGINAL_ATTRIBUTE)) {
+      submitButton.setAttribute(SUBMIT_ORIGINAL_ATTRIBUTE, submitButton.textContent ?? '');
+    }
+
     const msgs = t(this.getLanguage());
+    setText(submitButton, msgs.submitOnly);
     const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>('button'));
     RENTAL_DURATIONS.forEach((duration, i) => {
       const btn = buttons[i];

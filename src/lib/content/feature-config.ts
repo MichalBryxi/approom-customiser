@@ -1,7 +1,6 @@
 import { BarcodeCheckInController } from './barcode-check-in-controller';
 import { CustomerRegistrationFieldsController } from './customer-registration-fields-controller';
 import type { ContentFeatureDefinition } from './feature-runtime';
-import { RegistrationToRentalController } from './registration-to-rental-controller';
 import { RentalPrintFeature } from './rental-print-feature';
 import { StorageOrderLabelPrintController } from './storage-order-label-print-controller';
 import { StorageOrderWarningController } from './storage-order-warning-controller';
@@ -11,7 +10,6 @@ const barcodeCheckInController = new BarcodeCheckInController();
 const storageOrderWarningController = new StorageOrderWarningController();
 const storageOrderLabelPrintController = new StorageOrderLabelPrintController();
 const customerRegistrationFieldsController = new CustomerRegistrationFieldsController();
-const registrationToRentalController = new RegistrationToRentalController();
 
 const rentalTimelineButtonAnchor = '//button[contains(normalize-space(.), "Zeitachse")]';
 const currentOrderHeadingAnchor = '#panel_current_order_step2';
@@ -66,7 +64,7 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     id: 'customerRegistrationFields',
     label: 'Registrierungsfelder',
     url: { pathEquals: '/customer_registration/customer' },
-    anchor: 'app-registration form',
+    anchor: 'app-registration form button[type="submit"]',
     append: 'before',
     mount: (wrapper) =>
       mountHiddenFeature(wrapper, (enabled) =>
@@ -79,7 +77,11 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     label: 'Anmelden & Vermietung offen',
     url: { pathEquals: '/customer_registration/customer' },
     anchor: 'app-registration form button[type="submit"]',
-    append: 'after',
-    mount: (wrapper) => registrationToRentalController.mount(wrapper),
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, (enabled) =>
+        customerRegistrationFieldsController.syncRentalButtons(enabled),
+      ),
+    remove: () => customerRegistrationFieldsController.syncRentalButtons(false),
   },
 ];

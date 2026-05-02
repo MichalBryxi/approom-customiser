@@ -31,7 +31,7 @@ export default defineConfig({
   manifest: {
     name: 'AppRoom Customiser',
     description: 'Customises the App-Room ERP interface with configurable workflow helpers.',
-    permissions: ['storage'],
+    permissions: ['storage', 'webNavigation'],
     host_permissions: ['https://erp.app-room.ch/*'],
     action: {
       default_title: 'AppRoom Customiser',

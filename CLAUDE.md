@@ -78,6 +78,20 @@ The `customerRegistrationFields` feature uses a flat key pattern for per-field s
 3. Create a controller class under `src/lib/content/`
 4. Register it in `src/lib/content/feature-config.ts` with the correct URL condition and anchor selector
 
+## DOM observation and polling rules
+
+MutationObservers are fine — the problem is feedback loops and active polling, not observers themselves.
+
+- **No active polling**: never use `while`-loops or `setInterval` to check `location.pathname` or DOM state. One-shot async waits (e.g. `waitForElement` using `setTimeout`) that resolve once and stop are acceptable.
+- **URL changes**: prefer `wxt:locationchange` over writing a custom URL-watching MutationObserver. `wxt:locationchange` is also called by the feature runtime on every navigation, so `handleNavigation()` / `sync()` re-runs automatically.
+- **Anchor timing matters**: use the most specific anchor that is only in the DOM once the relevant content is fully rendered. For example, `app-registration form button[type="submit"]` guarantees all form inputs exist, whereas `app-registration form` appears before Angular has rendered the inputs.
+- **Idempotency is mandatory for any observer callback**: a function called by a MutationObserver must be a no-op when the DOM is already in the desired state. Setting `element.textContent = value` always replaces the text node even when the string is identical — use the `setText()` helper (which checks before mutating) instead. Non-idempotent mutations inside an observer callback cause infinite loops: observer fires → mutation → observer fires → …
+- **Cross-frame / cross-page state**: use WXT's `storage` API (`storage.getItem` / `storage.setItem`) instead of `sessionStorage` or `localStorage`. Use the `local:` prefix — **do not use `session:`**. `chrome.storage.session` throws "Access to storage is not allowed from this context" in content scripts running inside subframes (e.g. the customer registration page when embedded in the ERP). `chrome.storage.local` works reliably in all content-script contexts. Always call `clearState()` explicitly after use so `local:` state does not linger across browser restarts.
+
+- **Reacting to ERP page navigation from the background**: `wxt:locationchange` in content scripts does not fire for the Angular SPA at `customer_registration/` (the SPA's pushState is not intercepted by WXT after `document_idle`). Use `chrome.webNavigation.onCompleted` (full HTTP loads) **and** `chrome.webNavigation.onHistoryStateUpdated` (SPA pushState navigations) in `background.ts` to reliably detect navigation to a specific URL. Requires `webNavigation` in `permissions`. Use `chrome.tabs.update(tabId, { url })` to redirect — no `tabs` permission needed when the target URL matches `host_permissions`. See `handleResultPage` in `background.ts`.
+
+- **Language selector on `/customer_registration/customer`**: the `ng-select` at `ng-select.language-select` does **not** mutate the `lang` attribute on the existing `<span lang="...">` when the user picks a language — it **replaces** the span with a new element. Observing `span[lang]` for `attributeFilter: ['lang']` does not fire. Instead observe the parent `.ng-value-container` for `{ childList: true, subtree: true }`. See `bindLanguageObserver()` in `customer-registration-fields-controller.ts`.
+
 ## Conventions
 
 - All user-facing text (options page, popup labels, descriptions) must be in **German**

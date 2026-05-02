@@ -10,8 +10,12 @@ import type {
 } from '../types';
 import { normalizeText } from '../text';
 import { getLanguage, t } from '../i18n';
+import type { RentalDuration } from './registration-to-rental-automation';
+import { triggerRegistrationToRental } from './registration-to-rental-controller';
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
+const RENTAL_BUTTON_ATTRIBUTE = 'data-app-room-rental-buttons';
+const RENTAL_DURATIONS: RentalDuration[] = ['halbtag', '1_tag', '2_tage'];
 const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
 const EXTRA_SECTION_CONTENT_ATTRIBUTE = 'data-app-room-customer-registration-extra-content';
 const REQUIRED_FEEDBACK_ATTRIBUTE = 'data-app-room-required-feedback';
@@ -136,13 +140,11 @@ function getFieldSettingIds() {
 export class CustomerRegistrationFieldsController {
   private active = false;
 
+  private rentalButtonsEnabled = false;
+
   private form: HTMLFormElement | null = null;
 
   private lastFocusedInput: HTMLInputElement | null = null;
-
-  private formObserver: MutationObserver | null = null;
-
-  private pageObserver: MutationObserver | null = null;
 
   private originalPositions = new Map<HTMLElement, OriginalPosition>();
 
@@ -154,6 +156,10 @@ export class CustomerRegistrationFieldsController {
 
   private applying = false;
 
+  private languageObserver: MutationObserver | null = null;
+
+  private formObserver: MutationObserver | null = null;
+
   sync(enabled: boolean) {
     if (!enabled) {
       this.detach();
@@ -161,6 +167,7 @@ export class CustomerRegistrationFieldsController {
     }
 
     if (this.active) {
+      this.bindLanguageObserver();
       this.bindCurrentForm();
       this.applyFieldCustomisations();
       return;
@@ -171,11 +178,46 @@ export class CustomerRegistrationFieldsController {
     void this.initialize();
   }
 
+  syncRentalButtons(enabled: boolean) {
+    this.rentalButtonsEnabled = enabled;
+    if (this.active) {
+      this.applyFieldCustomisations();
+    }
+  }
+
   private async initialize() {
     this.settings = await getSettings();
-    this.bindPageObserver();
+    this.bindLanguageObserver();
     this.bindCurrentForm();
     this.applyFieldCustomisations();
+    this.form?.querySelector<HTMLInputElement>('input[formcontrolname="firstname"]')?.focus();
+  }
+
+  private bindLanguageObserver() {
+    if (this.languageObserver) {
+      console.log('[reg-fields] bindLanguageObserver: already bound, skipping');
+      return;
+    }
+
+    // Observe the .ng-value-container — Angular replaces the child span[lang] on language
+    // change rather than mutating its lang attribute, so childList on the parent is the
+    // correct trigger.
+    const ngValueContainer = document.querySelector<HTMLElement>(
+      'ng-select.language-select .ng-value-container',
+    );
+    if (!ngValueContainer) {
+      console.log('[reg-fields] bindLanguageObserver: .ng-value-container not found in DOM');
+      return;
+    }
+
+    console.log('[reg-fields] bindLanguageObserver: attaching observer to', ngValueContainer);
+    this.languageObserver = new MutationObserver((mutations) => {
+      const newLang = ngValueContainer.querySelector<HTMLElement>('.ng-value span[lang]')?.getAttribute('lang');
+      console.log('[reg-fields] languageObserver fired —', mutations.length, 'mutation(s), lang now:', newLang);
+      this.bindCurrentForm();
+      this.applyFieldCustomisations();
+    });
+    this.languageObserver.observe(ngValueContainer, { childList: true, subtree: true });
   }
 
   private bindSettingWatchers() {
@@ -196,27 +238,17 @@ export class CustomerRegistrationFieldsController {
     );
   }
 
-  private bindPageObserver() {
-    if (this.pageObserver || !document.body) {
-      return;
-    }
-
-    this.pageObserver = new MutationObserver(() => {
-      this.bindCurrentForm();
-      this.applyFieldCustomisations();
-    });
-    this.pageObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
   private bindCurrentForm() {
     const form = document.querySelector<HTMLFormElement>('app-registration form');
-    if (!form || form === this.form) {
+    if (!form) {
+      console.log('[reg-fields] bindCurrentForm: no app-registration form in DOM');
       return;
     }
-
+    if (form === this.form) {
+      console.log('[reg-fields] bindCurrentForm: same form element, no rebind needed');
+      return;
+    }
+    console.log('[reg-fields] bindCurrentForm: new form element found, rebinding');
     this.bindForm(form);
   }
 
@@ -224,14 +256,12 @@ export class CustomerRegistrationFieldsController {
     this.detachForm();
     this.form = form;
     this.form.addEventListener('submit', this.handleSubmit, true);
-
-    this.formObserver = new MutationObserver(() => {
+    this.formObserver = new MutationObserver((mutations) => {
+      console.log('[reg-fields] formObserver fired —', mutations.length, 'mutation(s); types:', [...new Set(mutations.map((m) => m.type))], '; applying customisations');
       this.applyFieldCustomisations();
     });
-    this.formObserver.observe(form, {
-      childList: true,
-      subtree: true,
-    });
+    this.formObserver.observe(form, { childList: true, subtree: true, characterData: true });
+    console.log('[reg-fields] bindForm: observer attached to form', form);
   }
 
   private detach() {
@@ -239,19 +269,19 @@ export class CustomerRegistrationFieldsController {
     this.lastFocusedInput = null;
     this.unwatchSettings.forEach((unwatch) => unwatch());
     this.unwatchSettings = [];
-    this.pageObserver?.disconnect();
-    this.pageObserver = null;
+    this.languageObserver?.disconnect();
+    this.languageObserver = null;
     this.detachForm();
   }
 
   private detachForm() {
     this.formObserver?.disconnect();
     this.formObserver = null;
-
     if (this.form) {
       this.form.removeEventListener('submit', this.handleSubmit, true);
       this.form.removeEventListener('focusin', this.handleFocusIn);
       this.form.querySelector(`[${CHAR_BAR_ATTRIBUTE}]`)?.remove();
+      this.form.querySelector(`[${RENTAL_BUTTON_ATTRIBUTE}]`)?.remove();
       this.form = null;
     }
 
@@ -271,10 +301,16 @@ export class CustomerRegistrationFieldsController {
   }
 
   private applyFieldCustomisations() {
-    if (this.applying || !this.form) {
+    if (this.applying) {
+      console.log('[reg-fields] applyFieldCustomisations: skipped (re-entrant)');
+      return;
+    }
+    if (!this.form) {
+      console.log('[reg-fields] applyFieldCustomisations: skipped (no form)');
       return;
     }
 
+    console.log('[reg-fields] applyFieldCustomisations: running, lang =', this.getLanguage());
     this.applying = true;
     try {
       this.moveConfiguredExtraFields();
@@ -283,9 +319,62 @@ export class CustomerRegistrationFieldsController {
       this.applyNonMandatoryDefaults();
       this.applyPhonePrefills();
       this.ensureCharBar();
+      this.ensureRentalButtons();
     } finally {
       this.applying = false;
+      console.log('[reg-fields] applyFieldCustomisations: done');
     }
+  }
+
+  private ensureRentalButtons() {
+    if (!this.form) {
+      return;
+    }
+
+    if (!this.rentalButtonsEnabled) {
+      this.form.querySelector(`[${RENTAL_BUTTON_ATTRIBUTE}]`)?.remove();
+      return;
+    }
+
+    const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (!submitButton) {
+      return;
+    }
+
+    let container = this.form.querySelector<HTMLElement>(`[${RENTAL_BUTTON_ATTRIBUTE}]`);
+
+    if (!container) {
+      container = document.createElement('span');
+      container.setAttribute(RENTAL_BUTTON_ATTRIBUTE, 'true');
+      container.style.marginRight = '0.5rem';
+      container.style.display = 'flex';
+      container.style.gap = '0.5rem';
+      container.style.float = 'right';
+
+      for (const duration of RENTAL_DURATIONS) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = submitButton.className
+          .replace('btn-primary', 'btn-success')
+          .replace('float-right', '')
+          .trim();
+        btn.addEventListener('click', () => {
+          void triggerRegistrationToRental(submitButton, duration);
+        });
+        container.append(btn);
+      }
+
+      submitButton.after(container);
+    }
+
+    const msgs = t(this.getLanguage());
+    const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>('button'));
+    RENTAL_DURATIONS.forEach((duration, i) => {
+      const btn = buttons[i];
+      if (btn) {
+        setText(btn, msgs.duration[duration]);
+      }
+    });
   }
 
   private ensureCharBar() {
@@ -554,13 +643,9 @@ export class CustomerRegistrationFieldsController {
 
   private applyNonMandatoryDefaults() {
     for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
-      if (this.settings[field.mandatorySetting]) {
-        continue;
-      }
-
       const defaultValue = NON_MANDATORY_FIELD_DEFAULTS.get(field.id);
       const input = getPrimaryInput(field);
-      if (defaultValue && input && normalizeText(input.value) === '') {
+      if (defaultValue && input) {
         setInputValue(input, defaultValue);
       }
     }

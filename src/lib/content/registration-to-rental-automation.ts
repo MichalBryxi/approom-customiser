@@ -1,8 +1,12 @@
+import { storage } from 'wxt/utils/storage';
 import { getAppRoomFieldsetByLabel } from './app-room-fields';
 
-const STATE_KEY = 'approom-reg-to-rental';
+// session: storage is unreliable in content scripts / subframes; local: works everywhere.
+// Also consumed by background.ts (webNavigation redirect handler) — keep in sync.
+export const STORAGE_KEY = 'local:approom-reg-to-rental';
 const STEP_TIMEOUT_MS = 8000;
 const POLL_INTERVAL_MS = 200;
+const RESULT_PATH = '/customer_registration/result';
 
 type AutomationStep = 'click-new-entry';
 
@@ -25,41 +29,21 @@ export function saveRegistrationToRentalState(
   customerFirstname: string,
   customerLastname: string,
   duration: RentalDuration,
-) {
-  getTopStorage().setItem(
-    STATE_KEY,
-    JSON.stringify({
-      step: 'click-new-entry',
-      customerFirstname,
-      customerLastname,
-      duration,
-    } satisfies RegistrationToRentalState),
-  );
+): Promise<void> {
+  return storage.setItem<RegistrationToRentalState>(STORAGE_KEY, {
+    step: 'click-new-entry',
+    customerFirstname,
+    customerLastname,
+    duration,
+  });
 }
 
-export function clearRegistrationToRentalState() {
-  getTopStorage().removeItem(STATE_KEY);
+export function clearRegistrationToRentalState(): Promise<void> {
+  return storage.removeItem(STORAGE_KEY);
 }
 
-function getTopStorage(): Storage {
-  try {
-    return window.top?.sessionStorage ?? sessionStorage;
-  } catch {
-    return sessionStorage;
-  }
-}
-
-function getState(): RegistrationToRentalState | null {
-  try {
-    const raw = getTopStorage().getItem(STATE_KEY);
-    return raw ? (JSON.parse(raw) as RegistrationToRentalState) : null;
-  } catch {
-    return null;
-  }
-}
-
-function clearState() {
-  getTopStorage().removeItem(STATE_KEY);
+function clearState(): Promise<void> {
+  return storage.removeItem(STORAGE_KEY);
 }
 
 function waitForElement<T extends Element>(
@@ -110,7 +94,7 @@ function findDurationButton(duration: RentalDuration): HTMLButtonElement | null 
 }
 
 async function handleClickNewEntry(state: RegistrationToRentalState) {
-  const onUnload = () => clearState();
+  const onUnload = () => void clearState();
   window.addEventListener('pagehide', onUnload, { once: true });
 
   try {
@@ -123,16 +107,15 @@ async function handleClickNewEntry(state: RegistrationToRentalState) {
 async function runClickNewEntry(state: RegistrationToRentalState) {
   const button = await waitForElement(findNewEntryButton);
   if (!button) {
-    clearState();
+    void clearState();
     return;
   }
   button.click();
 
   // Wait for the new-entry form to appear (SPA navigates to /rental/rent/new).
-  // Polling here avoids relying on wxt:locationchange for the SPA transition.
   const multiselect = await waitForElement(findKundeMultiselect, 15000);
   if (!multiselect) {
-    clearState();
+    void clearState();
     return;
   }
 
@@ -151,7 +134,7 @@ async function runClickNewEntry(state: RegistrationToRentalState) {
   const searchInput =
     input ?? multiselect.querySelector<HTMLInputElement>('.multiselect__input');
   if (!searchInput) {
-    clearState();
+    void clearState();
     return;
   }
 
@@ -173,24 +156,56 @@ async function runClickNewEntry(state: RegistrationToRentalState) {
 
   // Click the matching duration button.
   const durationButton = await waitForElement(() => findDurationButton(state.duration), 3000);
-  clearState();
+  void clearState();
   durationButton?.click();
 }
 
 export class RegistrationToRentalAutomation {
   private inProgress = false;
 
-  private readonly handleNavigation = () => {
+  private state: RegistrationToRentalState | null = null;
+
+  private unwatchState: (() => void) | null = null;
+
+  private readonly handleNavigation = async () => {
     if (this.inProgress) {
       return;
     }
 
-    const state = getState();
+    // Use the in-memory state kept current by storage.watch. Fall back to a
+    // direct read to handle the race where wxt:locationchange fires before the
+    // watch callback has delivered the write (SPA navigation immediately after
+    // saveRegistrationToRentalState), and also to handle full-page reloads
+    // where start() ran before any state was written.
+    let state = this.state;
     if (!state) {
+      try {
+        state = await storage.getItem<RegistrationToRentalState>(STORAGE_KEY);
+        console.log('[reg-to-rental] handleNavigation: in-memory state was null, read from storage:', state);
+      } catch {
+        console.log('[reg-to-rental] handleNavigation: storage read failed (cross-origin frame)');
+        return;
+      }
+    }
+
+    if (!state) {
+      console.log('[reg-to-rental] handleNavigation: no state, skipping. path =', location.pathname);
+      return;
+    }
+
+    // Re-check after the async gap to avoid racing a concurrent call.
+    if (this.inProgress) {
       return;
     }
 
     const path = location.pathname;
+    console.log('[reg-to-rental] handleNavigation: state =', state, 'path =', path);
+
+    if (path === RESULT_PATH) {
+      console.log('[reg-to-rental] Redirecting to /rental/rent');
+      (window.top ?? window).location.assign('/rental/rent');
+      return;
+    }
 
     if (state.step === 'click-new-entry' && path === '/rental/rent') {
       this.inProgress = true;
@@ -200,12 +215,26 @@ export class RegistrationToRentalAutomation {
     }
   };
 
-  start() {
+  async start() {
+    try {
+      this.state = await storage.getItem<RegistrationToRentalState>(STORAGE_KEY);
+      console.log('[reg-to-rental] start(): initial state =', this.state, 'path =', location.pathname);
+      this.unwatchState = storage.watch<RegistrationToRentalState>(STORAGE_KEY, (newValue) => {
+        console.log('[reg-to-rental] storage.watch fired: state =', newValue);
+        this.state = newValue;
+      });
+    } catch {
+      console.log('[reg-to-rental] start(): storage inaccessible, exiting (cross-origin frame)');
+      return;
+    }
     window.addEventListener('wxt:locationchange', this.handleNavigation);
-    this.handleNavigation();
+    void this.handleNavigation();
   }
 
   stop() {
     window.removeEventListener('wxt:locationchange', this.handleNavigation);
+    this.unwatchState?.();
+    this.unwatchState = null;
+    this.state = null;
   }
 }

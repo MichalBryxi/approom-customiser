@@ -4,7 +4,8 @@ export type FeatureId =
   | 'checkInQuantityWarning'
   | 'printLabelsByCheckInQuantity'
   | 'customerRegistrationFields'
-  | 'registrationToRental';
+  | 'registrationToRental'
+  | 'unterschriftHighlight';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -40,6 +41,7 @@ export type ExtensionSettings = {
   printLabelsByCheckInQuantity: boolean;
   customerRegistrationFields: boolean;
   registrationToRental: boolean;
+  unterschriftHighlight: boolean;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &
   Record<CustomerRegistrationFieldLabelSettingId, string>;

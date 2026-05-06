@@ -231,6 +231,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   printLabelsByCheckInQuantity: true,
   customerRegistrationFields: true,
   registrationToRental: true,
+  unterschriftHighlight: true,
   'customerRegistrationField.salutation.moveToExtra': false,
   'customerRegistrationField.firstname.moveToExtra': false,
   'customerRegistrationField.lastname.moveToExtra': false,
@@ -360,6 +361,12 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: 'Anmelden & Vermietung offen',
     description:
       'Fügt neben "Anmelden" einen zweiten Button hinzu, der nach der Registrierung direkt zur Neuen Vermietung wechselt und den Kunden vorausfüllt.',
+  },
+  {
+    id: 'unterschriftHighlight',
+    groupId: 'rental-rent',
+    label: 'Unterschrift-Button hervorheben',
+    description: 'Hebt den Unterschrift-Button in der Mietansicht rot blinkend hervor.',
   },
 ];
 

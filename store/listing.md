@@ -41,9 +41,6 @@ Productivity
 ## Language
 English
 
-## Screenshots to capture (1280×800 each)
-1. Open `store/screenshot-settings.html` in a browser at 1280×800 and capture the full page
-2. Rental list view with the Print action visible in a row menu
-3. Customer registration form with the duration buttons (Nur anmelden / Halbtag / 1 Tag / 2 Tage)
-4. Storage order view with the barcode input field and colour-coded rows
-5. Rental detail page with the Unterschrift button highlighted in red
+## Screenshots
+Place 1280×800 PNGs in `store/screenshots/`:
+`01-settings.png`, `02-rental-print.png`, `03-registration-duration.png`, `04-barcode-checkin.png`, `05-unterschrift.png`

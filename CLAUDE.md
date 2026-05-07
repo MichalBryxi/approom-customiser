@@ -66,7 +66,7 @@ For behavior-only features (no visible UI), mount a hidden wrapper using the `mo
 - `src/lib/types.ts` — `FeatureId` union; `ExtensionSettings` interface (add every new setting here)
 - `src/lib/settings.ts` — `DEFAULT_SETTINGS`, `FEATURE_DEFINITIONS` (German labels/descriptions), `FEATURE_SETTING_GROUPS` (breadcrumbs for the options page)
 - Storage keys: `sync:<settingId>`, managed via WXT storage API
-- `ensureDefaultSettings()` writes only missing keys — safe to call on every extension start
+- `getSettings()` passes `{ fallback: DEFAULT_SETTINGS[key] }` for every key — missing storage entries transparently return the default. Do not add an `ensureDefaultSettings()`-style pre-population step; the fallback makes it redundant.
 
 The `customerRegistrationFields` feature uses a flat key pattern for per-field settings:
 `customerRegistrationField.<fieldId>.moveToExtra`, `.mandatory`, `.label.<lang>` (lang: `de | en | it | fr`).

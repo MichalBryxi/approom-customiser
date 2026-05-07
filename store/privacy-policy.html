@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppRoom Customiser — Privacy Policy</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.6; color: #222; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy — AppRoom Customiser</h1>
+  <p><em>Last updated: 2026-05-07</em></p>
+
+  <h2>What this extension does</h2>
+  <p>AppRoom Customiser is a browser extension that adds workflow helpers to the App-Room ERP
+  at <code>erp.app-room.ch</code>. It operates entirely within your browser.</p>
+
+  <h2>Data collection</h2>
+  <p>This extension <strong>does not collect, transmit, or share any personal data</strong>.
+  No analytics, no tracking, no external servers.</p>
+
+  <h2>Data storage</h2>
+  <p>The extension stores only the following data, entirely within your browser:</p>
+  <ul>
+    <li><strong>Extension settings</strong> (which features are enabled, field configuration) — stored in
+    <code>chrome.storage.sync</code> so your preferences are available across your own devices signed
+    in to the same browser profile.</li>
+    <li><strong>Temporary automation state</strong> (customer name and rental duration used during the
+    registration-to-rental workflow) — stored in <code>chrome.storage.local</code> and deleted
+    immediately after the workflow completes.</li>
+  </ul>
+  <p>No data is ever sent to any server outside your browser.</p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>storage</strong> — to save and read extension settings.</li>
+    <li><strong>webNavigation</strong> — to detect when the App-Room registration page finishes
+    submitting, so the extension can redirect to the rental screen automatically.</li>
+    <li><strong>Host permission for erp.app-room.ch</strong> — to inject the workflow helpers
+    into the App-Room ERP only. No other websites are accessed.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions? Open an issue on the project repository or contact the developer directly.</p>
+</body>
+</html>

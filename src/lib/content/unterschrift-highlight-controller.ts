@@ -1,6 +1,5 @@
 const STYLE_ID = 'approom-unterschrift-flash-style';
 const MANAGED_ATTRIBUTE = 'data-app-room-unterschrift-highlight';
-const ORIGINAL_STYLE_ATTRIBUTE = 'data-app-room-unterschrift-original-style';
 
 const KEYFRAMES = `
 @keyframes approom-unterschrift-flash {
@@ -20,15 +19,7 @@ const KEYFRAMES = `
 `;
 
 export class UnterschriftHighlightController {
-  sync(enabled: boolean, button: HTMLButtonElement | null) {
-    if (enabled) {
-      this.apply(button);
-    } else {
-      this.restore();
-    }
-  }
-
-  private apply(btn: HTMLButtonElement | null) {
+  apply(btn: HTMLButtonElement | null) {
     if (!btn || btn.hasAttribute(MANAGED_ATTRIBUTE)) {
       return;
     }
@@ -40,20 +31,7 @@ export class UnterschriftHighlightController {
       document.head.append(style);
     }
 
-    btn.setAttribute(ORIGINAL_STYLE_ATTRIBUTE, btn.getAttribute('style') ?? '');
     btn.setAttribute(MANAGED_ATTRIBUTE, 'true');
     btn.style.animation = 'approom-unterschrift-flash 1.5s ease-in-out infinite';
   }
-
-  private restore() {
-    const btn = this.findButton();
-    if (btn?.hasAttribute(MANAGED_ATTRIBUTE)) {
-      const original = btn.getAttribute(ORIGINAL_STYLE_ATTRIBUTE) ?? '';
-      btn.setAttribute('style', original);
-      btn.removeAttribute(MANAGED_ATTRIBUTE);
-      btn.removeAttribute(ORIGINAL_STYLE_ATTRIBUTE);
-    }
-    document.getElementById(STYLE_ID)?.remove();
-  }
-
 }

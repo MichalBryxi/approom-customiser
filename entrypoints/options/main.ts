@@ -7,6 +7,7 @@ import {
   getSettings,
   updateSetting,
 } from '../../src/lib/settings';
+import { reloadErpTabs } from '../../src/lib/extension-tabs';
 import type { FeatureDescriptionPart } from '../../src/lib/settings';
 import type { ExtensionSettings } from '../../src/lib/types';
 
@@ -86,7 +87,7 @@ function createMatrixCheckbox(settingId: keyof ExtensionSettings, checked: boole
   input.name = settingId;
   input.checked = checked;
   input.addEventListener('change', () => {
-    void updateSetting(settingId, input.checked);
+    void updateSetting(settingId, input.checked).then(reloadErpTabs);
   });
   return input;
 }
@@ -98,7 +99,7 @@ function createMatrixTextInput(settingId: keyof ExtensionSettings, value: string
   input.name = settingId;
   input.value = value;
   input.addEventListener('change', () => {
-    void updateSetting(settingId, input.value);
+    void updateSetting(settingId, input.value).then(reloadErpTabs);
   });
   return input;
 }
@@ -202,7 +203,7 @@ function appendRentalPrintConfiguration(body: HTMLElement, settings: ExtensionSe
     settings.rentalPrintSkipMietobjektPattern ??
     DEFAULT_SETTINGS.rentalPrintSkipMietobjektPattern;
   input.addEventListener('change', () => {
-    void updateSetting('rentalPrintSkipMietobjektPattern', input.value);
+    void updateSetting('rentalPrintSkipMietobjektPattern', input.value).then(reloadErpTabs);
   });
 
   label.append(labelText, input);
@@ -258,7 +259,7 @@ async function renderOptions() {
         );
 
         input.addEventListener('change', () => {
-          void updateSetting(feature.id, input.checked);
+          void updateSetting(feature.id, input.checked).then(reloadErpTabs);
         });
 
         body.append(wrapper);

@@ -1,9 +1,5 @@
-import {
-  DEFAULT_SETTINGS,
-  getSettings,
-  updateSetting,
-  watchSetting,
-} from '../../src/lib/settings';
+import { DEFAULT_SETTINGS, getSettings, updateSetting } from '../../src/lib/settings';
+import { reloadErpTabs } from '../../src/lib/extension-tabs';
 
 function showPopupError(message: string) {
   const root = document.querySelector<HTMLElement>('#popup-root');
@@ -56,14 +52,9 @@ async function renderPopup() {
     optionsButton.textContent = 'Einstellungen öffnen';
 
     input.addEventListener('change', () => {
-      void updateSetting('extensionEnabled', input.checked);
+      void updateSetting('extensionEnabled', input.checked).then(reloadErpTabs);
     });
     optionsButton.addEventListener('click', openOptionsPage);
-
-    const unwatch = watchSetting('extensionEnabled', (enabled) => {
-      input.checked = enabled;
-    });
-    window.addEventListener('pagehide', unwatch, { once: true });
 
     root.append(toggle, optionsButton);
   } catch (error) {

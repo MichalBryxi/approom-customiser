@@ -92,6 +92,18 @@ MutationObservers are fine — the problem is feedback loops and active polling,
 
 - **Language selector on `/customer_registration/customer`**: the `ng-select` at `ng-select.language-select` does **not** mutate the `lang` attribute on the existing `<span lang="...">` when the user picks a language — it **replaces** the span with a new element. Observing `span[lang]` for `attributeFilter: ['lang']` does not fire. Instead observe the parent `.ng-value-container` for `{ childList: true, subtree: true }`. See `bindLanguageObserver()` in `customer-registration-fields-controller.ts`.
 
+## Settings changes reload the page — no teardown needed
+
+When any setting is saved from the options page or popup, **all open ERP tabs are reloaded** via `reloadErpTabs()` (see `src/lib/extension-tabs.ts`). The content script then reinitialises from scratch with the new settings.
+
+Consequences:
+- **Do not implement `remove:` callbacks** in `feature-config.ts`. They are never called for settings changes.
+- **Do not restore DOM state** on disable (original button text, removed elements, cleared classes). The page reload provides a clean slate.
+- **Do not add `watchSetting` watchers** inside controllers. Per-feature setting reactions are handled by reload; `feature-runtime.ts` no longer sets up per-feature watchers either.
+- For **SPA navigation** (URL changes within the ERP), the feature runtime calls `ui.remove()` and `definition.remove?.()`, but since the SPA replaces the DOM, any zombie observers or event listeners on disconnected elements are harmless and will be GC'd.
+- Keep only **setup code** in controllers (`sync(true)`, `apply`, `mount`). The `sync(false)` / disabled branch can be a no-op.
+- **Observer disconnect on form rebind** is still valid (same-session, same-page): when `bindCurrentForm()` finds a new form element it calls `detachForm()`, which disconnects the old `formObserver` and removes stale event listeners before attaching to the new element.
+
 ## Conventions
 
 - All user-facing text (options page, popup labels, descriptions) must be in **German**

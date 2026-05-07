@@ -1,5 +1,5 @@
 import { announceFeatureActivation, logErpDebug } from './feature-activation-log';
-import { getSettings, watchSetting } from '../settings';
+import { getSettings } from '../settings';
 import type { ExtensionSettings, FeatureId } from '../types';
 import { createIntegratedUi } from 'wxt/utils/content-script-ui/integrated';
 import type { IntegratedContentScriptUi } from 'wxt/utils/content-script-ui/integrated';
@@ -54,8 +54,6 @@ export class ContentFeatureRuntime {
 
   private runtimeFeatures: RuntimeFeature[] = [];
 
-  private unwatchSettings: Array<() => void> = [];
-
   constructor(private readonly features: ContentFeatureDefinition[]) {}
 
   start(context?: ContentScriptContext) {
@@ -68,9 +66,6 @@ export class ContentFeatureRuntime {
       ui.remove();
     });
     this.runtimeFeatures = [];
-
-    this.unwatchSettings.forEach((unwatch) => unwatch());
-    this.unwatchSettings = [];
   }
 
   private async initialize() {
@@ -78,35 +73,6 @@ export class ContentFeatureRuntime {
 
     this.runtimeFeatures = this.features.map((definition) => this.createRuntimeFeature(definition));
     this.context?.addEventListener(window, 'wxt:locationchange', this.scheduleSync);
-
-    this.unwatchSettings = this.features.map((feature) => {
-      const unwatch = watchSetting(feature.id, (newValue) => {
-        if (!this.settings) {
-          return;
-        }
-
-        this.settings = {
-          ...this.settings,
-          [feature.id]: newValue,
-        };
-        this.syncFeature(this.getRuntimeFeature(feature.id));
-      });
-      this.context?.onInvalidated(unwatch);
-      return unwatch;
-    });
-    const unwatchExtensionEnabled = watchSetting('extensionEnabled', (newValue) => {
-      if (!this.settings) {
-        return;
-      }
-
-      this.settings = {
-        ...this.settings,
-        extensionEnabled: newValue,
-      };
-      this.syncFeatures();
-    });
-    this.context?.onInvalidated(unwatchExtensionEnabled);
-    this.unwatchSettings.push(unwatchExtensionEnabled);
 
     this.syncFeatures();
   }

@@ -2,7 +2,6 @@ import {
   CUSTOMER_REGISTRATION_FIELD_DEFINITIONS,
   DEFAULT_SETTINGS,
   getSettings,
-  watchSetting,
 } from '../settings';
 import type {
   CustomerRegistrationFieldId,
@@ -15,7 +14,6 @@ import { triggerRegistrationToRental } from './registration-to-rental-controller
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const RENTAL_BUTTON_ATTRIBUTE = 'data-app-room-rental-buttons';
-const SUBMIT_ORIGINAL_ATTRIBUTE = 'data-app-room-submit-original';
 const RENTAL_DURATIONS: RentalDuration[] = ['halbtag', '1_tag', '2_tage'];
 const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
 const EXTRA_SECTION_CONTENT_ATTRIBUTE = 'data-app-room-customer-registration-extra-content';
@@ -127,17 +125,6 @@ function getFieldValue(field: CustomerRegistrationFieldDefinition) {
   return inputs[0]?.value ?? '';
 }
 
-function getFieldSettingIds() {
-  return CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.flatMap((field) => [
-    field.moveToExtraSetting,
-    field.mandatorySetting,
-    field.labelSettings.de,
-    field.labelSettings.en,
-    field.labelSettings.it,
-    field.labelSettings.fr,
-  ]);
-}
-
 export class CustomerRegistrationFieldsController {
   private active = false;
 
@@ -151,8 +138,6 @@ export class CustomerRegistrationFieldsController {
 
   private observedRequiredInputs = new Set<HTMLInputElement>();
 
-  private unwatchSettings: Array<() => void> = [];
-
   private settings: ExtensionSettings = DEFAULT_SETTINGS;
 
   private applying = false;
@@ -163,7 +148,6 @@ export class CustomerRegistrationFieldsController {
 
   sync(enabled: boolean) {
     if (!enabled) {
-      this.detach();
       return;
     }
 
@@ -175,7 +159,6 @@ export class CustomerRegistrationFieldsController {
     }
 
     this.active = true;
-    this.bindSettingWatchers();
     void this.initialize();
   }
 
@@ -221,24 +204,6 @@ export class CustomerRegistrationFieldsController {
     this.languageObserver.observe(ngValueContainer, { childList: true, subtree: true });
   }
 
-  private bindSettingWatchers() {
-    if (this.unwatchSettings.length > 0) {
-      return;
-    }
-
-    const settingIds = getFieldSettingIds();
-
-    this.unwatchSettings = settingIds.map((settingId) =>
-      watchSetting(settingId, (newValue) => {
-        this.settings = {
-          ...this.settings,
-          [settingId]: newValue,
-        };
-        this.applyFieldCustomisations();
-      }),
-    );
-  }
-
   private bindCurrentForm() {
     const form = document.querySelector<HTMLFormElement>('app-registration form');
     if (!form) {
@@ -265,46 +230,20 @@ export class CustomerRegistrationFieldsController {
     console.log('[reg-fields] bindForm: observer attached to form', form);
   }
 
-  private detach() {
-    this.active = false;
-    this.lastFocusedInput = null;
-    this.unwatchSettings.forEach((unwatch) => unwatch());
-    this.unwatchSettings = [];
-    this.languageObserver?.disconnect();
-    this.languageObserver = null;
-    this.detachForm();
-  }
-
   private detachForm() {
     this.formObserver?.disconnect();
     this.formObserver = null;
     if (this.form) {
       this.form.removeEventListener('submit', this.handleSubmit, true);
       this.form.removeEventListener('focusin', this.handleFocusIn);
-      this.form.querySelector(`[${CHAR_BAR_ATTRIBUTE}]`)?.remove();
-      this.form.querySelector(`[${RENTAL_BUTTON_ATTRIBUTE}]`)?.remove();
-      const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
-      const original = submitButton?.getAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
-      if (submitButton && original !== null && original !== undefined) {
-        setText(submitButton, original);
-        submitButton.removeAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
-      }
       this.form = null;
     }
-
     for (const input of this.observedRequiredInputs) {
       input.removeEventListener('input', this.handleRequiredInput);
       input.removeEventListener('change', this.handleRequiredInput);
-      input.required = false;
-      input.removeAttribute('aria-required');
-      input.setCustomValidity('');
-      input.classList.remove('is-invalid');
     }
     this.observedRequiredInputs.clear();
-
-    this.restoreExtraFields();
-    this.getExtraSection()?.remove();
-    this.clearRequiredFeedback();
+    this.originalPositions.clear();
   }
 
   private applyFieldCustomisations() {
@@ -341,14 +280,6 @@ export class CustomerRegistrationFieldsController {
     const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
 
     if (!this.rentalButtonsEnabled) {
-      this.form.querySelector(`[${RENTAL_BUTTON_ATTRIBUTE}]`)?.remove();
-      if (submitButton) {
-        const original = submitButton.getAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
-        if (original !== null) {
-          setText(submitButton, original);
-          submitButton.removeAttribute(SUBMIT_ORIGINAL_ATTRIBUTE);
-        }
-      }
       return;
     }
 
@@ -380,11 +311,6 @@ export class CustomerRegistrationFieldsController {
       }
 
       submitButton.after(container);
-    }
-
-    // Save the ERP's original label once so we can restore it if the feature is disabled.
-    if (!submitButton.hasAttribute(SUBMIT_ORIGINAL_ATTRIBUTE)) {
-      submitButton.setAttribute(SUBMIT_ORIGINAL_ATTRIBUTE, submitButton.textContent ?? '');
     }
 
     const msgs = t(this.getLanguage());
@@ -615,18 +541,6 @@ export class CustomerRegistrationFieldsController {
     group.removeAttribute(MANAGED_ATTRIBUTE);
   }
 
-  private restoreExtraFields() {
-    const entries = Array.from(this.originalPositions.entries()).sort(
-      ([, first], [, second]) => first.index - second.index,
-    );
-
-    for (const [group, position] of entries) {
-      this.restoreFieldGroup(group, position);
-    }
-
-    this.originalPositions.clear();
-  }
-
   private configureRequiredFields() {
     const configuredInputs = new Set<HTMLInputElement>();
 
@@ -712,12 +626,6 @@ export class CustomerRegistrationFieldsController {
     }
 
     this.getRequiredFeedback(fieldName)?.remove();
-  }
-
-  private clearRequiredFeedback() {
-    document
-      .querySelectorAll<HTMLElement>(`[${REQUIRED_FEEDBACK_ATTRIBUTE}]`)
-      .forEach((feedback) => feedback.remove());
   }
 
   private readonly handleRequiredInput = (event: Event) => {

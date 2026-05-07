@@ -31,8 +31,6 @@ export class StorageOrderWarningController {
 
   sync(enabled: boolean) {
     if (!enabled) {
-      this.detachTableListeners();
-      this.clearAllWarnings();
       return;
     }
 
@@ -70,16 +68,6 @@ export class StorageOrderWarningController {
     this.boundTable.removeEventListener('input', this.handleTableInput);
     this.boundTable.removeEventListener('change', this.handleTableInput);
     this.boundTable = null;
-  }
-
-  private clearAllWarnings() {
-    document
-      .querySelectorAll<HTMLTableRowElement>(
-        `#bestell_artikel tbody tr[${WARNING_ROW_ATTRIBUTE}], #bestell_artikel tbody tr[${COMPLETE_ROW_ATTRIBUTE}]`,
-      )
-      .forEach((row) => {
-        setRowState(row, 'clear');
-      });
   }
 
   private getColumnIndex(table: HTMLTableElement, headerLabel: string) {

@@ -35,8 +35,6 @@ export class StorageOrderLabelPrintController {
 
   sync(enabled: boolean) {
     if (!enabled) {
-      this.detachButtonListener();
-      this.clearPendingApply();
       return;
     }
 

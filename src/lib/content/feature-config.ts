@@ -20,9 +20,9 @@ const storageOrderFrameUrl = {
   searchIncludes: 'men_link=storage',
 };
 
-function mountHiddenFeature(wrapper: HTMLElement, sync: (enabled: boolean) => void) {
+function mountHiddenFeature(wrapper: HTMLElement, onMount: () => void) {
   wrapper.hidden = true;
-  sync(true);
+  onMount();
 }
 
 export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
@@ -40,7 +40,6 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     url: storageOrderFrameUrl,
     anchor: currentOrderHeadingAnchor,
     mount: (wrapper) => barcodeCheckInController.sync(true, wrapper),
-    remove: () => barcodeCheckInController.sync(false),
   },
   {
     id: 'checkInQuantityWarning',
@@ -49,8 +48,7 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: '#bestell_artikel',
     append: 'before',
     mount: (wrapper) =>
-      mountHiddenFeature(wrapper, (enabled) => storageOrderWarningController.sync(enabled)),
-    remove: () => storageOrderWarningController.sync(false),
+      mountHiddenFeature(wrapper, () => storageOrderWarningController.sync(true)),
   },
   {
     id: 'printLabelsByCheckInQuantity',
@@ -59,8 +57,7 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: '#etiketten_button',
     append: 'before',
     mount: (wrapper) =>
-      mountHiddenFeature(wrapper, (enabled) => storageOrderLabelPrintController.sync(enabled)),
-    remove: () => storageOrderLabelPrintController.sync(false),
+      mountHiddenFeature(wrapper, () => storageOrderLabelPrintController.sync(true)),
   },
   {
     id: 'customerRegistrationFields',
@@ -69,10 +66,7 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: 'app-registration form button[type="submit"]',
     append: 'before',
     mount: (wrapper) =>
-      mountHiddenFeature(wrapper, (enabled) =>
-        customerRegistrationFieldsController.sync(enabled),
-      ),
-    remove: () => customerRegistrationFieldsController.sync(false),
+      mountHiddenFeature(wrapper, () => customerRegistrationFieldsController.sync(true)),
   },
   {
     id: 'unterschriftHighlight',
@@ -81,10 +75,9 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: '//button[contains(normalize-space(.), "Unterschrift")]',
     append: 'before',
     mount: (wrapper) =>
-      mountHiddenFeature(wrapper, (enabled) =>
-        unterschriftHighlightController.sync(enabled, wrapper.nextElementSibling as HTMLButtonElement | null),
+      mountHiddenFeature(wrapper, () =>
+        unterschriftHighlightController.apply(wrapper.nextElementSibling as HTMLButtonElement | null),
       ),
-    remove: () => unterschriftHighlightController.sync(false, null),
   },
   {
     id: 'registrationToRental',
@@ -93,9 +86,6 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: 'app-registration form button[type="submit"]',
     append: 'before',
     mount: (wrapper) =>
-      mountHiddenFeature(wrapper, (enabled) =>
-        customerRegistrationFieldsController.syncRentalButtons(enabled),
-      ),
-    remove: () => customerRegistrationFieldsController.syncRentalButtons(false),
+      mountHiddenFeature(wrapper, () => customerRegistrationFieldsController.syncRentalButtons(true)),
   },
 ];

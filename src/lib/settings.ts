@@ -380,24 +380,6 @@ const SETTING_STORAGE_KEYS = SETTINGS_KEYS.reduce(
   {} as Record<ExtensionSettingId, `sync:${ExtensionSettingId}`>,
 );
 
-export async function ensureDefaultSettings() {
-  const current = await storage.getItems(SETTINGS_KEYS.map((key) => SETTING_STORAGE_KEYS[key]));
-  const missingEntries = current
-    .map((entry, index) => ({
-      key: SETTINGS_KEYS[index]!,
-      value: entry.value,
-    }))
-    .filter((entry) => entry.value === null)
-    .map((entry) => ({
-      key: SETTING_STORAGE_KEYS[entry.key],
-      value: DEFAULT_SETTINGS[entry.key],
-    }));
-
-  if (missingEntries.length > 0) {
-    await storage.setItems(missingEntries);
-  }
-}
-
 export async function getSettings(): Promise<ExtensionSettings> {
   const entries = await Promise.all(
     SETTINGS_KEYS.map(async (key) => [

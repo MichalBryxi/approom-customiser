@@ -28,16 +28,12 @@ export default defineBackground({
     chrome.webNavigation.onCompleted.addListener(handleResultPage, RESULT_URL_FILTER);
     chrome.webNavigation.onHistoryStateUpdated.addListener(handleResultPage, RESULT_URL_FILTER);
 
-    const bootstrapExtension = async () => {
-      const { ensureDefaultSettings } = await import('../src/lib/settings');
+    const setSessionAccessLevel = () =>
+      chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
 
-      await Promise.all([
-        chrome.storage.session.setAccessLevel({
-          accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
-        }),
-        ensureDefaultSettings(),
-      ]);
-    };
+    chrome.runtime.onInstalled.addListener(() => { void setSessionAccessLevel(); });
+    chrome.runtime.onStartup.addListener(() => { void setSessionAccessLevel(); });
+    void setSessionAccessLevel();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       void (async () => {
@@ -54,14 +50,5 @@ export default defineBackground({
       return true;
     });
 
-    chrome.runtime.onInstalled.addListener(() => {
-      void bootstrapExtension();
-    });
-
-    chrome.runtime.onStartup.addListener(() => {
-      void bootstrapExtension();
-    });
-
-    void bootstrapExtension();
   },
 });

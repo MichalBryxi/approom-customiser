@@ -232,7 +232,10 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   customerRegistrationFields: true,
   registrationToRental: true,
   unterschriftHighlight: true,
-  'customerRegistrationField.salutation.moveToExtra': false,
+  rentalHideRechnungButton: true,
+  rentalSignatureNamePrefill: true,
+  rentalSignatureSaveButton: true,
+  'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
   'customerRegistrationField.lastname.moveToExtra': false,
   'customerRegistrationField.street.moveToExtra': false,
@@ -367,6 +370,25 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'rental-rent',
     label: 'Unterschrift-Button hervorheben',
     description: 'Hebt den Unterschrift-Button in der Mietansicht rot blinkend hervor.',
+  },
+  {
+    id: 'rentalHideRechnungButton',
+    groupId: 'rental-rent',
+    label: '"Rechnung"-Button ausblenden',
+    description: 'Blendet den "Rechnung"-Button in der Mietansicht aus.',
+  },
+  {
+    id: 'rentalSignatureNamePrefill',
+    groupId: 'rental-rent',
+    label: '"Unterschrift"-Dialog: Name vorausfüllen',
+    description:
+      'Füllt das "Name"-Feld im Unterschrift-Dialog automatisch mit dem Kundennamen aus dem Begrüssungstext aus.',
+  },
+  {
+    id: 'rentalSignatureSaveButton',
+    groupId: 'rental-rent',
+    label: '"Unterschrift"-Dialog: Speichern-Button grün',
+    description: 'Hebt den Speichern-Button im Unterschrift-Dialog grün hervor.',
   },
 ];
 

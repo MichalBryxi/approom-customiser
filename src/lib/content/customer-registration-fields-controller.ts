@@ -26,6 +26,11 @@ const NON_MANDATORY_FIELD_DEFAULTS = new Map<CustomerRegistrationFieldId, string
 ]);
 const PHONE_FIELD_PREFILL = '+';
 const PHONE_FIELDS: CustomerRegistrationFieldId[] = ['mobile', 'phone_private', 'phone_work'];
+const FORM_OBSERVER_OPTIONS: MutationObserverInit = {
+  childList: true,
+  subtree: true,
+  characterData: true,
+};
 
 
 
@@ -140,8 +145,6 @@ export class CustomerRegistrationFieldsController {
 
   private settings: ExtensionSettings = DEFAULT_SETTINGS;
 
-  private applying = false;
-
   private languageObserver: MutationObserver | null = null;
 
   private formObserver: MutationObserver | null = null;
@@ -226,7 +229,7 @@ export class CustomerRegistrationFieldsController {
       console.log('[reg-fields] formObserver fired —', mutations.length, 'mutation(s); types:', [...new Set(mutations.map((m) => m.type))], '; applying customisations');
       this.applyFieldCustomisations();
     });
-    this.formObserver.observe(form, { childList: true, subtree: true, characterData: true });
+    this.formObserver.observe(form, FORM_OBSERVER_OPTIONS);
     console.log('[reg-fields] bindForm: observer attached to form', form);
   }
 
@@ -247,17 +250,14 @@ export class CustomerRegistrationFieldsController {
   }
 
   private applyFieldCustomisations() {
-    if (this.applying) {
-      console.log('[reg-fields] applyFieldCustomisations: skipped (re-entrant)');
-      return;
-    }
     if (!this.form) {
-      console.log('[reg-fields] applyFieldCustomisations: skipped (no form)');
       return;
     }
 
-    console.log('[reg-fields] applyFieldCustomisations: running, lang =', this.getLanguage());
-    this.applying = true;
+    // Disconnect while applying so our own DOM mutations don't re-trigger the observer.
+    // Each sub-method is idempotent, so the one extra call that may fire after reconnect
+    // (Angular finishing its change-detection cycle) is a safe no-op.
+    this.formObserver?.disconnect();
     try {
       this.moveConfiguredExtraFields();
       this.configureLabels();
@@ -267,8 +267,9 @@ export class CustomerRegistrationFieldsController {
       this.ensureCharBar();
       this.ensureRentalButtons();
     } finally {
-      this.applying = false;
-      console.log('[reg-fields] applyFieldCustomisations: done');
+      if (this.form) {
+        this.formObserver?.observe(this.form, FORM_OBSERVER_OPTIONS);
+      }
     }
   }
 
@@ -580,7 +581,7 @@ export class CustomerRegistrationFieldsController {
     for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
       const defaultValue = NON_MANDATORY_FIELD_DEFAULTS.get(field.id);
       const input = getPrimaryInput(field);
-      if (defaultValue && input) {
+      if (defaultValue && input && normalizeText(input.value) === '') {
         setInputValue(input, defaultValue);
       }
     }

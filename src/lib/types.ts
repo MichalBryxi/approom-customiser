@@ -5,7 +5,10 @@ export type FeatureId =
   | 'printLabelsByCheckInQuantity'
   | 'customerRegistrationFields'
   | 'registrationToRental'
-  | 'unterschriftHighlight';
+  | 'unterschriftHighlight'
+  | 'rentalHideRechnungButton'
+  | 'rentalSignatureNamePrefill'
+  | 'rentalSignatureSaveButton';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -42,6 +45,9 @@ export type ExtensionSettings = {
   customerRegistrationFields: boolean;
   registrationToRental: boolean;
   unterschriftHighlight: boolean;
+  rentalHideRechnungButton: boolean;
+  rentalSignatureNamePrefill: boolean;
+  rentalSignatureSaveButton: boolean;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &
   Record<CustomerRegistrationFieldLabelSettingId, string>;

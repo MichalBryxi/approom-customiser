@@ -32,6 +32,7 @@ export default defineConfig({
   manifest: {
     name: 'AppRoom Customiser',
     description: 'Customises the App-Room ERP interface with configurable workflow helpers.',
+    homepage_url: 'https://github.com/MichalBryxi/approom-customiser',
     permissions: ['storage', 'webNavigation'],
     host_permissions: ['https://erp.app-room.ch/*'],
     action: {

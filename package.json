@@ -2,6 +2,11 @@
   "name": "approom-customiser",
   "version": "0.6.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MichalBryxi/approom-customiser"
+  },
+  "homepage": "https://github.com/MichalBryxi/approom-customiser",
   "type": "module",
   "packageManager": "pnpm@10.26.2",
   "scripts": {

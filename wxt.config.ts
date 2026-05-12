@@ -21,7 +21,7 @@ const chromiumBinary = getDefaultChromiumBinary();
 export default defineConfig({
   outDir: 'build',
   webExt: {
-    startUrls: ['https://erp.app-room.ch/rental/rent'],
+    startUrls: ['https://erp.app-room.ch'],
     binaries: chromiumBinary
       ? {
           chrome: chromiumBinary,

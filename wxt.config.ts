@@ -22,6 +22,7 @@ export default defineConfig({
   outDir: 'build',
   webExt: {
     startUrls: ['https://erp.app-room.ch'],
+    chromiumArgs: ['--user-data-dir=.wxt/chrome-data'],
     binaries: chromiumBinary
       ? {
           chrome: chromiumBinary,

@@ -4,7 +4,7 @@
 AppRoom Customiser
 
 ## Short description (≤132 characters)
-Adds configurable workflow helpers to the App-Room ERP: print buttons, barcode check-in, registration automation and more.
+Adds configurable workflow helpers to the App-Room ERP: print buttons, signature automation, registration helpers and more.
 
 ## Detailed description
 
@@ -16,11 +16,11 @@ Adds a "Print" action to each rental row. Opens a clean print preview with the v
 **Rental — Unterschrift reminder**
 Highlights the signature button with a pulsing red animation so it is never overlooked during a rental handover.
 
+**Rental — Unterschrift dialog: name pre-fill**
+When the signature dialog opens, automatically fills the Name field with the customer's name from the greeting text.
+
 **Customer registration → open rental**
 Adds duration buttons (Half day / 1 day / 2 days) next to the registration submit button. After the customer is registered, the extension automatically navigates to a new rental, pre-selects the customer, and sets the chosen duration.
-
-**Barcode check-in**
-Adds a barcode input field to the storage order view. Scanning an article barcode increments the corresponding check-in quantity immediately.
 
 **Check-in quantity warning**
 Colour-codes storage order rows based on check-in status so shortfalls are visible at a glance before confirming the order.
@@ -41,6 +41,3 @@ Productivity
 ## Language
 English
 
-## Screenshots
-Place 1280×800 PNGs in `store/screenshots/`:
-`01-settings.png`, `02-rental-print.png`, `03-registration-duration.png`, `04-barcode-checkin.png`, `05-unterschrift.png`

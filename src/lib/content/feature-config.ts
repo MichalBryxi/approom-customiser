@@ -1,4 +1,3 @@
-import { BarcodeCheckInController } from './barcode-check-in-controller';
 import { CustomerRegistrationFieldsController } from './customer-registration-fields-controller';
 import type { ContentFeatureDefinition } from './feature-runtime';
 import { RentalPrintFeature } from './rental-print-feature';
@@ -9,7 +8,6 @@ import { StorageOrderWarningController } from './storage-order-warning-controlle
 import { UnterschriftHighlightController } from './unterschrift-highlight-controller';
 
 const rentalPrintFeature = new RentalPrintFeature();
-const barcodeCheckInController = new BarcodeCheckInController();
 const storageOrderWarningController = new StorageOrderWarningController();
 const storageOrderLabelPrintController = new StorageOrderLabelPrintController();
 const customerRegistrationFieldsController = new CustomerRegistrationFieldsController();
@@ -37,13 +35,6 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: rentalTimelineButtonAnchor,
     append: 'before',
     mount: (wrapper) => rentalPrintFeature.mount(wrapper),
-  },
-  {
-    id: 'barcodeCheckIn',
-    label: 'Per Barcode einbuchen',
-    url: storageOrderFrameUrl,
-    anchor: currentOrderHeadingAnchor,
-    mount: (wrapper) => barcodeCheckInController.sync(true, wrapper),
   },
   {
     id: 'checkInQuantityWarning',

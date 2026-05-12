@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.0] - 2026-05-12
+
+### Removed
+- **Barcode check-in**: feature removed entirely.
+
 ## [0.5.0] - 2026-05-09
 
 ### New features

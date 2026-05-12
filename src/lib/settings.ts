@@ -226,7 +226,6 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   extensionEnabled: true,
   rentalPrintButton: true,
   rentalPrintSkipMietobjektPattern: '.*Helm.*',
-  barcodeCheckIn: true,
   checkInQuantityWarning: true,
   printLabelsByCheckInQuantity: true,
   customerRegistrationFields: true,
@@ -316,13 +315,6 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: 'Rental-Druckbutton',
     description:
       'Fügt in Mietansichten einen Druckbutton hinzu, um sichtbare Zeilendetails schnell zu drucken.',
-  },
-  {
-    id: 'barcodeCheckIn',
-    groupId: 'storage-order',
-    label: 'Per Barcode einbuchen',
-    description:
-      'Fügt der aktuellen Bestellung eine Barcode-Eingabe hinzu, die passende Artikel beim Scannen hochzählt.',
   },
   {
     id: 'checkInQuantityWarning',

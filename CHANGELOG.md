@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.8.0] - 2026-05-15
+
+### New features
+- **Rental — "Erfasst durch" filtern**: hides entries in the "Buchung erfasst durch" dropdown that do not match a configurable regex pattern. Empty pattern (default) shows all entries.
+
 ## [0.7.0] - 2026-05-15
 
 ### New features

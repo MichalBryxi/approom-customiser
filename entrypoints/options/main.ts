@@ -184,96 +184,65 @@ function createCustomerRegistrationMatrix(settings: ExtensionSettings) {
   return wrapper;
 }
 
-function appendRentalPrintConfiguration(body: HTMLElement, settings: ExtensionSettings) {
+function createNestedField(labelText: string, input: HTMLInputElement) {
   const wrapper = document.createElement('div');
   wrapper.className = 'options__nested-options';
-
   const label = document.createElement('label');
   label.className = 'options__field';
-
-  const labelText = document.createElement('span');
-  labelText.className = 'options__field-label';
-  labelText.textContent = 'Druck überspringen, wenn Mietobjekt passt';
-
-  const input = document.createElement('input');
-  input.className = 'options__matrix-text';
-  input.type = 'text';
-  input.name = 'rentalPrintSkipMietobjektPattern';
-  input.value =
-    settings.rentalPrintSkipMietobjektPattern ??
-    DEFAULT_SETTINGS.rentalPrintSkipMietobjektPattern;
-  input.addEventListener('change', () => {
-    void updateSetting('rentalPrintSkipMietobjektPattern', input.value).then(reloadErpTabs);
-  });
-
-  label.append(labelText, input);
+  const text = document.createElement('span');
+  text.className = 'options__field-label';
+  text.textContent = labelText;
+  label.append(text, input);
   wrapper.append(label);
-  body.append(wrapper);
+  return wrapper;
 }
 
-function appendCustomerRegistrationConfiguration(body: HTMLElement, settings: ExtensionSettings) {
-  body.append(createCustomerRegistrationMatrix(settings));
-}
+const FEATURE_EXTRA_CONFIG: Partial<
+  Record<keyof ExtensionSettings, (body: HTMLElement, settings: ExtensionSettings) => void>
+> = {
+  rentalPrintButton(body, settings) {
+    const input = document.createElement('input');
+    input.className = 'options__matrix-text';
+    input.type = 'text';
+    input.name = 'rentalPrintSkipMietobjektPattern';
+    input.value = settings.rentalPrintSkipMietobjektPattern ?? DEFAULT_SETTINGS.rentalPrintSkipMietobjektPattern;
+    input.addEventListener('change', () => {
+      void updateSetting('rentalPrintSkipMietobjektPattern', input.value).then(reloadErpTabs);
+    });
+    body.append(createNestedField('Druck überspringen, wenn Mietobjekt passt', input));
+  },
 
-function appendRentalErfasstDurchFilterConfiguration(body: HTMLElement, settings: ExtensionSettings) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'options__nested-options';
+  customerRegistrationFields(body, settings) {
+    body.append(createCustomerRegistrationMatrix(settings));
+  },
 
-  const label = document.createElement('label');
-  label.className = 'options__field';
+  rentalErfasstDurchFilter(body, settings) {
+    const input = document.createElement('input');
+    input.className = 'options__matrix-text';
+    input.type = 'text';
+    input.name = 'rentalErfasstDurchFilterPattern';
+    input.value = settings.rentalErfasstDurchFilterPattern ?? DEFAULT_SETTINGS.rentalErfasstDurchFilterPattern;
+    input.addEventListener('change', () => {
+      void updateSetting('rentalErfasstDurchFilterPattern', input.value).then(reloadErpTabs);
+    });
+    body.append(createNestedField('Regex-Muster (leer = alles anzeigen)', input));
+  },
 
-  const labelText = document.createElement('span');
-  labelText.className = 'options__field-label';
-  labelText.textContent = 'Regex-Muster (leer = alles anzeigen)';
-
-  const input = document.createElement('input');
-  input.className = 'options__matrix-text';
-  input.type = 'text';
-  input.name = 'rentalErfasstDurchFilterPattern';
-  input.value =
-    settings.rentalErfasstDurchFilterPattern ??
-    DEFAULT_SETTINGS.rentalErfasstDurchFilterPattern;
-  input.addEventListener('change', () => {
-    void updateSetting('rentalErfasstDurchFilterPattern', input.value).then(reloadErpTabs);
-  });
-
-  label.append(labelText, input);
-  wrapper.append(label);
-  body.append(wrapper);
-}
-
-function appendRechnungenMitarbeiterConfiguration(body: HTMLElement, settings: ExtensionSettings) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'options__nested-options';
-
-  const label = document.createElement('label');
-  label.className = 'options__field';
-
-  const labelText = document.createElement('span');
-  labelText.className = 'options__field-label';
-  labelText.textContent = 'Mitarbeiterpreis: EP + N%';
-
-  const input = document.createElement('input');
-  input.className = 'options__matrix-text';
-  input.type = 'number';
-  input.min = '0';
-  input.step = '1';
-  input.name = 'rechnungenMitarbeiterPreisProzent';
-  input.value = String(
-    settings.rechnungenMitarbeiterPreisProzent ??
-      DEFAULT_SETTINGS.rechnungenMitarbeiterPreisProzent,
-  );
-  input.addEventListener('change', () => {
-    const val = parseFloat(input.value);
-    if (!isNaN(val)) {
-      void updateSetting('rechnungenMitarbeiterPreisProzent', val).then(reloadErpTabs);
-    }
-  });
-
-  label.append(labelText, input);
-  wrapper.append(label);
-  body.append(wrapper);
-}
+  rechnungenMitarbeiterPreis(body, settings) {
+    const input = document.createElement('input');
+    input.className = 'options__matrix-text';
+    input.type = 'number';
+    input.min = '0';
+    input.step = '1';
+    input.name = 'rechnungenMitarbeiterPreisProzent';
+    input.value = String(settings.rechnungenMitarbeiterPreisProzent ?? DEFAULT_SETTINGS.rechnungenMitarbeiterPreisProzent);
+    input.addEventListener('change', () => {
+      const val = parseFloat(input.value);
+      if (!isNaN(val)) void updateSetting('rechnungenMitarbeiterPreisProzent', val).then(reloadErpTabs);
+    });
+    body.append(createNestedField('Mitarbeiterpreis: EP + N%', input));
+  },
+};
 
 function showOptionsError(message: string) {
   const form = document.querySelector<HTMLFormElement>('#settings-form');
@@ -323,22 +292,7 @@ async function renderOptions() {
         });
 
         body.append(wrapper);
-
-        if (feature.id === 'rentalPrintButton') {
-          appendRentalPrintConfiguration(body, settings);
-        }
-
-        if (feature.id === 'customerRegistrationFields') {
-          appendCustomerRegistrationConfiguration(body, settings);
-        }
-
-        if (feature.id === 'rentalErfasstDurchFilter') {
-          appendRentalErfasstDurchFilterConfiguration(body, settings);
-        }
-
-        if (feature.id === 'rechnungenMitarbeiterPreis') {
-          appendRechnungenMitarbeiterConfiguration(body, settings);
-        }
+        FEATURE_EXTRA_CONFIG[feature.id]?.(body, settings);
       }
 
       form.append(section);

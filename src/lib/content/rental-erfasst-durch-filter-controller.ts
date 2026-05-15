@@ -1,15 +1,7 @@
 import { getSettings } from '../settings';
+import { injectStyle } from './inject-style';
 
 const FILTER_ATTR = 'data-ar-erfasst-filtered';
-const STYLE_ID = 'app-room-erfasst-filter-styles';
-
-function injectStyles() {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `li.multiselect__element[${FILTER_ATTR}] { display: none !important; }`;
-  document.head.append(style);
-}
 
 export class RentalErfasstDurchFilterController {
   private observer: MutationObserver | null = null;
@@ -23,7 +15,7 @@ export class RentalErfasstDurchFilterController {
     const settings = await getSettings();
     const pattern = settings.rentalErfasstDurchFilterPattern.trim();
     this.regex = pattern ? new RegExp(pattern, 'i') : null;
-    injectStyles();
+    injectStyle('app-room-erfasst-filter-styles', `li.multiselect__element[${FILTER_ATTR}] { display: none !important; }`);
 
     if (this.observer) return;
     this.observer = new MutationObserver(() => this.applyFilter());

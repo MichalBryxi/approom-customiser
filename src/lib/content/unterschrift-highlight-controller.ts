@@ -1,3 +1,5 @@
+import { injectStyle } from './inject-style';
+
 const STYLE_ID = 'approom-unterschrift-flash-style';
 const MANAGED_ATTRIBUTE = 'data-app-room-unterschrift-highlight';
 
@@ -24,12 +26,7 @@ export class UnterschriftHighlightController {
       return;
     }
 
-    if (!document.getElementById(STYLE_ID)) {
-      const style = document.createElement('style');
-      style.id = STYLE_ID;
-      style.textContent = KEYFRAMES;
-      document.head.append(style);
-    }
+    injectStyle(STYLE_ID, KEYFRAMES);
 
     btn.setAttribute(MANAGED_ATTRIBUTE, 'true');
     btn.style.animation = 'approom-unterschrift-flash 1.5s ease-in-out infinite';

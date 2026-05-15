@@ -1,23 +1,7 @@
 import { getSettings } from '../settings';
+import { injectStyle } from './inject-style';
 
 const MANAGED_ATTRIBUTE = 'data-app-room-ma-btn';
-
-function injectStyles() {
-  const id = 'app-room-ma-btn-styles';
-  if (document.getElementById(id)) return;
-  const style = document.createElement('style');
-  style.id = id;
-  style.textContent = `
-    button[${MANAGED_ATTRIBUTE}]:disabled:hover,
-    button[${MANAGED_ATTRIBUTE}]:disabled:focus {
-      background-color: #fff;
-      border-color: #ccc;
-      color: #333;
-      box-shadow: none;
-    }
-  `;
-  document.head.append(style);
-}
 
 export class RechnungenMitarbeiterController {
   private observer: MutationObserver | null = null;
@@ -30,7 +14,15 @@ export class RechnungenMitarbeiterController {
   private async initialize(tbody: HTMLElement) {
     const settings = await getSettings();
     this.prozent = settings.rechnungenMitarbeiterPreisProzent;
-    injectStyles();
+    injectStyle('app-room-ma-btn-styles', `
+      button[${MANAGED_ATTRIBUTE}]:disabled:hover,
+      button[${MANAGED_ATTRIBUTE}]:disabled:focus {
+        background-color: #fff;
+        border-color: #ccc;
+        color: #333;
+        box-shadow: none;
+      }
+    `);
     this.applyToAllRows(tbody);
 
     if (this.observer) return;

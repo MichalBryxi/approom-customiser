@@ -7,7 +7,8 @@ export type FeatureId =
   | 'unterschriftHighlight'
   | 'rentalHideRechnungButton'
   | 'rentalSignatureNamePrefill'
-  | 'rentalSignatureSaveButton';
+  | 'rentalSignatureSaveButton'
+  | 'rechnungenMitarbeiterPreis';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -46,6 +47,8 @@ export type ExtensionSettings = {
   rentalHideRechnungButton: boolean;
   rentalSignatureNamePrefill: boolean;
   rentalSignatureSaveButton: boolean;
+  rechnungenMitarbeiterPreis: boolean;
+  rechnungenMitarbeiterPreisProzent: number;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &
   Record<CustomerRegistrationFieldLabelSettingId, string>;

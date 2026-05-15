@@ -215,6 +215,39 @@ function appendCustomerRegistrationConfiguration(body: HTMLElement, settings: Ex
   body.append(createCustomerRegistrationMatrix(settings));
 }
 
+function appendRechnungenMitarbeiterConfiguration(body: HTMLElement, settings: ExtensionSettings) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'options__nested-options';
+
+  const label = document.createElement('label');
+  label.className = 'options__field';
+
+  const labelText = document.createElement('span');
+  labelText.className = 'options__field-label';
+  labelText.textContent = 'Mitarbeiterpreis: EP + N%';
+
+  const input = document.createElement('input');
+  input.className = 'options__matrix-text';
+  input.type = 'number';
+  input.min = '0';
+  input.step = '1';
+  input.name = 'rechnungenMitarbeiterPreisProzent';
+  input.value = String(
+    settings.rechnungenMitarbeiterPreisProzent ??
+      DEFAULT_SETTINGS.rechnungenMitarbeiterPreisProzent,
+  );
+  input.addEventListener('change', () => {
+    const val = parseFloat(input.value);
+    if (!isNaN(val)) {
+      void updateSetting('rechnungenMitarbeiterPreisProzent', val).then(reloadErpTabs);
+    }
+  });
+
+  label.append(labelText, input);
+  wrapper.append(label);
+  body.append(wrapper);
+}
+
 function showOptionsError(message: string) {
   const form = document.querySelector<HTMLFormElement>('#settings-form');
   if (!form) {
@@ -270,6 +303,10 @@ async function renderOptions() {
 
         if (feature.id === 'customerRegistrationFields') {
           appendCustomerRegistrationConfiguration(body, settings);
+        }
+
+        if (feature.id === 'rechnungenMitarbeiterPreis') {
+          appendRechnungenMitarbeiterConfiguration(body, settings);
         }
       }
 

@@ -59,6 +59,10 @@ export const FEATURE_SETTING_GROUPS = [
     id: 'customer-registration',
     breadcrumb: 'Customer Registration > Customer',
   },
+  {
+    id: 'office-rechnungen',
+    breadcrumb: 'Office > Rechnungen',
+  },
 ] as const;
 
 export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
@@ -234,6 +238,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalHideRechnungButton: true,
   rentalSignatureNamePrefill: true,
   rentalSignatureSaveButton: true,
+  rechnungenMitarbeiterPreis: true,
+  rechnungenMitarbeiterPreisProzent: 12,
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
   'customerRegistrationField.lastname.moveToExtra': false,
@@ -381,6 +387,12 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'rental-rent',
     label: '"Unterschrift"-Dialog: Speichern-Button grün',
     description: 'Hebt den Speichern-Button im Unterschrift-Dialog grün hervor.',
+  },
+  {
+    id: 'rechnungenMitarbeiterPreis',
+    groupId: 'office-rechnungen',
+    label: 'Mitarbeiterpreis-Button',
+    description: 'Fügt neben dem EP-Hinweis einen "MA"-Button hinzu, der den Einzelpreis auf EP + N% setzt.',
   },
 ];
 

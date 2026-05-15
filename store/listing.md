@@ -31,6 +31,9 @@ Pre-fills the label print dialog with the current check-in quantities, removing 
 **Registration field customisation**
 A per-field matrix lets you move fields into a collapsible "Extra" section, mark fields as mandatory, and override field labels in German, English, Italian and French.
 
+**Rechnungen — Mitarbeiterpreis**
+Adds an "EP+N%" button next to the unit price field on each invoice line. One click calculates the employee price (purchase price plus a configurable markup percentage) and fills it in. The button disables itself when the field already holds the correct value. The markup percentage is configurable in extension settings.
+
 ---
 
 All settings are stored locally in your browser. No data is collected, transmitted, or shared.

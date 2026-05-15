@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.0] - 2026-05-15
+
+### New features
+- **Office > Rechnungen — Mitarbeiterpreis-Button**: adds an "EP+N%" button next to the unit price field on each invoice line. Clicking it calculates `EP × (1 + N%)` and fills in the price. The button disables itself when the current price already matches. N is configurable in extension settings (default: 12).
+
 ## [0.6.0] - 2026-05-12
 
 ### Removed

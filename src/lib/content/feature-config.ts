@@ -1,6 +1,7 @@
 import { CustomerRegistrationFieldsController } from './customer-registration-fields-controller';
 import type { ContentFeatureDefinition } from './feature-runtime';
 import { RentalPrintFeature } from './rental-print-feature';
+import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
 import { RentalSignatureNameController } from './rental-signature-name-controller';
 import { RentalSignatureSaveButtonController } from './rental-signature-save-button-controller';
 import { StorageOrderLabelPrintController } from './storage-order-label-print-controller';
@@ -12,6 +13,7 @@ const storageOrderWarningController = new StorageOrderWarningController();
 const storageOrderLabelPrintController = new StorageOrderLabelPrintController();
 const customerRegistrationFieldsController = new CustomerRegistrationFieldsController();
 const unterschriftHighlightController = new UnterschriftHighlightController();
+const rechnungenMitarbeiterController = new RechnungenMitarbeiterController();
 const rentalSignatureNameController = new RentalSignatureNameController();
 const rentalSignatureSaveButtonController = new RentalSignatureSaveButtonController();
 
@@ -112,5 +114,19 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     append: 'before',
     mount: (wrapper) =>
       mountHiddenFeature(wrapper, () => customerRegistrationFieldsController.syncRentalButtons(true)),
+  },
+  {
+    id: 'rechnungenMitarbeiterPreis',
+    label: 'Mitarbeiterpreis-Button',
+    url: { pathEquals: '/start.php', searchIncludes: 'men_tool=rechnungen' },
+    anchor: '#positionen',
+    append: 'before',
+    // tbody is required: a <span> before a <tbody> is invalid HTML and browsers
+    // move it outside the table, breaking wrapper.nextElementSibling.
+    tag: 'tbody',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () =>
+        rechnungenMitarbeiterController.mount(wrapper.nextElementSibling as HTMLElement),
+      ),
   },
 ];

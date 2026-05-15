@@ -215,6 +215,33 @@ function appendCustomerRegistrationConfiguration(body: HTMLElement, settings: Ex
   body.append(createCustomerRegistrationMatrix(settings));
 }
 
+function appendRentalErfasstDurchFilterConfiguration(body: HTMLElement, settings: ExtensionSettings) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'options__nested-options';
+
+  const label = document.createElement('label');
+  label.className = 'options__field';
+
+  const labelText = document.createElement('span');
+  labelText.className = 'options__field-label';
+  labelText.textContent = 'Regex-Muster (leer = alles anzeigen)';
+
+  const input = document.createElement('input');
+  input.className = 'options__matrix-text';
+  input.type = 'text';
+  input.name = 'rentalErfasstDurchFilterPattern';
+  input.value =
+    settings.rentalErfasstDurchFilterPattern ??
+    DEFAULT_SETTINGS.rentalErfasstDurchFilterPattern;
+  input.addEventListener('change', () => {
+    void updateSetting('rentalErfasstDurchFilterPattern', input.value).then(reloadErpTabs);
+  });
+
+  label.append(labelText, input);
+  wrapper.append(label);
+  body.append(wrapper);
+}
+
 function appendRechnungenMitarbeiterConfiguration(body: HTMLElement, settings: ExtensionSettings) {
   const wrapper = document.createElement('div');
   wrapper.className = 'options__nested-options';
@@ -303,6 +330,10 @@ async function renderOptions() {
 
         if (feature.id === 'customerRegistrationFields') {
           appendCustomerRegistrationConfiguration(body, settings);
+        }
+
+        if (feature.id === 'rentalErfasstDurchFilter') {
+          appendRentalErfasstDurchFilterConfiguration(body, settings);
         }
 
         if (feature.id === 'rechnungenMitarbeiterPreis') {

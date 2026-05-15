@@ -1,7 +1,8 @@
 import { CustomerRegistrationFieldsController } from './customer-registration-fields-controller';
 import type { ContentFeatureDefinition } from './feature-runtime';
-import { RentalPrintFeature } from './rental-print-feature';
 import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
+import { RentalErfasstDurchFilterController } from './rental-erfasst-durch-filter-controller';
+import { RentalPrintFeature } from './rental-print-feature';
 import { RentalSignatureNameController } from './rental-signature-name-controller';
 import { RentalSignatureSaveButtonController } from './rental-signature-save-button-controller';
 import { StorageOrderLabelPrintController } from './storage-order-label-print-controller';
@@ -14,6 +15,7 @@ const storageOrderLabelPrintController = new StorageOrderLabelPrintController();
 const customerRegistrationFieldsController = new CustomerRegistrationFieldsController();
 const unterschriftHighlightController = new UnterschriftHighlightController();
 const rechnungenMitarbeiterController = new RechnungenMitarbeiterController();
+const rentalErfasstDurchFilterController = new RentalErfasstDurchFilterController();
 const rentalSignatureNameController = new RentalSignatureNameController();
 const rentalSignatureSaveButtonController = new RentalSignatureSaveButtonController();
 
@@ -105,6 +107,15 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
         const btn = wrapper.nextElementSibling as HTMLElement | null;
         if (btn) btn.hidden = true;
       }),
+  },
+  {
+    id: 'rentalErfasstDurchFilter',
+    label: '"Erfasst durch" filtern',
+    url: { pathEquals: '/rental/rent/new' },
+    anchor: 'input[name="rental.rent.form.user"]',
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalErfasstDurchFilterController.mount()),
   },
   {
     id: 'registrationToRental',

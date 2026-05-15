@@ -240,6 +240,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalSignatureSaveButton: true,
   rechnungenMitarbeiterPreis: true,
   rechnungenMitarbeiterPreisProzent: 12,
+  rentalErfasstDurchFilter: true,
+  rentalErfasstDurchFilterPattern: '',
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
   'customerRegistrationField.lastname.moveToExtra': false,
@@ -393,6 +395,12 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'office-rechnungen',
     label: 'Mitarbeiterpreis-Button',
     description: 'Fügt neben dem EP-Hinweis einen "MA"-Button hinzu, der den Einzelpreis auf EP + N% setzt.',
+  },
+  {
+    id: 'rentalErfasstDurchFilter',
+    groupId: 'rental-rent',
+    label: '"Erfasst durch" filtern',
+    description: 'Blendet Einträge im "Erfasst durch"-Dropdown aus, die nicht dem konfigurierten Regex-Muster entsprechen.',
   },
 ];
 

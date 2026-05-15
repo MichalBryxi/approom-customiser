@@ -13,8 +13,6 @@ export async function triggerRegistrationToRental(
   const lastname =
     form?.querySelector<HTMLInputElement>('input[formcontrolname="lastname"]')?.value ?? '';
 
-  console.log('[reg-to-rental] saving state:', { firstname, lastname, duration });
   await saveRegistrationToRentalState(firstname, lastname, duration);
-  console.log('[reg-to-rental] state saved, clicking submit');
   submitButton.click();
 }

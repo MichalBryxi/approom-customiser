@@ -11,6 +11,7 @@ import { normalizeText } from '../text';
 import { getLanguage, t } from '../i18n';
 import type { RentalDuration } from './registration-to-rental-automation';
 import { triggerRegistrationToRental } from './registration-to-rental-controller';
+import { setInputValue } from './dom';
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const RENTAL_BUTTON_ATTRIBUTE = 'data-app-room-rental-buttons';
@@ -107,16 +108,6 @@ function ensureLabel(input: HTMLInputElement, text: string, mandatory: boolean) 
   return label;
 }
 
-function setInputValue(input: HTMLInputElement, value: string) {
-  if (input.value === value) {
-    return;
-  }
-
-  input.value = value;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-}
-
 function isRadioField(field: CustomerRegistrationFieldDefinition) {
   return getPrimaryInput(field)?.type === 'radio';
 }
@@ -182,7 +173,6 @@ export class CustomerRegistrationFieldsController {
 
   private bindLanguageObserver() {
     if (this.languageObserver) {
-      console.log('[reg-fields] bindLanguageObserver: already bound, skipping');
       return;
     }
 
@@ -193,14 +183,10 @@ export class CustomerRegistrationFieldsController {
       'ng-select.language-select .ng-value-container',
     );
     if (!ngValueContainer) {
-      console.log('[reg-fields] bindLanguageObserver: .ng-value-container not found in DOM');
       return;
     }
 
-    console.log('[reg-fields] bindLanguageObserver: attaching observer to', ngValueContainer);
-    this.languageObserver = new MutationObserver((mutations) => {
-      const newLang = ngValueContainer.querySelector<HTMLElement>('.ng-value span[lang]')?.getAttribute('lang');
-      console.log('[reg-fields] languageObserver fired —', mutations.length, 'mutation(s), lang now:', newLang);
+    this.languageObserver = new MutationObserver(() => {
       this.bindCurrentForm();
       this.applyFieldCustomisations();
     });
@@ -209,15 +195,9 @@ export class CustomerRegistrationFieldsController {
 
   private bindCurrentForm() {
     const form = document.querySelector<HTMLFormElement>('app-registration form');
-    if (!form) {
-      console.log('[reg-fields] bindCurrentForm: no app-registration form in DOM');
+    if (!form || form === this.form) {
       return;
     }
-    if (form === this.form) {
-      console.log('[reg-fields] bindCurrentForm: same form element, no rebind needed');
-      return;
-    }
-    console.log('[reg-fields] bindCurrentForm: new form element found, rebinding');
     this.bindForm(form);
   }
 
@@ -225,12 +205,10 @@ export class CustomerRegistrationFieldsController {
     this.detachForm();
     this.form = form;
     this.form.addEventListener('submit', this.handleSubmit, true);
-    this.formObserver = new MutationObserver((mutations) => {
-      console.log('[reg-fields] formObserver fired —', mutations.length, 'mutation(s); types:', [...new Set(mutations.map((m) => m.type))], '; applying customisations');
+    this.formObserver = new MutationObserver(() => {
       this.applyFieldCustomisations();
     });
     this.formObserver.observe(form, FORM_OBSERVER_OPTIONS);
-    console.log('[reg-fields] bindForm: observer attached to form', form);
   }
 
   private detachForm() {

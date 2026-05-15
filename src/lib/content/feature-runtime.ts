@@ -1,4 +1,3 @@
-import { announceFeatureActivation, logErpDebug } from './feature-activation-log';
 import { getSettings } from '../settings';
 import type { ExtensionSettings, FeatureId } from '../types';
 import { createIntegratedUi } from 'wxt/utils/content-script-ui/integrated';
@@ -8,7 +7,7 @@ import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 type UrlCondition = {
   pathEquals?: string;
-  pathPrefix?: string;
+  pathStartsWith?: string;
   searchIncludes?: string;
 };
 
@@ -36,7 +35,7 @@ function matchesUrlCondition(condition: UrlCondition) {
     return false;
   }
 
-  if (condition.pathPrefix && !pathname.startsWith(condition.pathPrefix)) {
+  if (condition.pathStartsWith && !pathname.startsWith(condition.pathStartsWith)) {
     return false;
   }
 
@@ -88,11 +87,6 @@ export class ContentFeatureRuntime {
       position: 'inline',
       tag: definition.tag ?? 'span',
       onMount: (wrapper) => {
-        announceFeatureActivation(definition.id, definition.label);
-        logErpDebug('Content feature mounted.', {
-          featureId: definition.id,
-          anchor: definition.anchor,
-        });
         definition.mount(wrapper);
       },
       onRemove: () => {
@@ -130,23 +124,12 @@ export class ContentFeatureRuntime {
 
     if (shouldAutoMount && !feature.autoMounting) {
       feature.autoMounting = true;
-      logErpDebug('Content feature waiting for anchor.', {
-        featureId: feature.definition.id,
-        anchor: feature.definition.anchor,
-        path: window.location.pathname,
-        search: window.location.search,
-      });
       feature.ui.autoMount();
       return;
     }
 
     if (!shouldAutoMount && feature.autoMounting) {
       feature.autoMounting = false;
-      logErpDebug('Content feature disabled for current page or setting.', {
-        featureId: feature.definition.id,
-        path: window.location.pathname,
-        search: window.location.search,
-      });
       feature.ui.remove();
     }
   }

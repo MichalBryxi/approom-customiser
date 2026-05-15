@@ -1,5 +1,5 @@
-import { logErpDebug } from './feature-activation-log';
 import { normalizeText } from '../text';
+import { getColumnIndex, setInputValue } from './dom';
 
 type PrintQuantitySnapshot = Array<{
   artId: string;
@@ -16,12 +16,6 @@ function buildPrintQueue(snapshot: PrintQuantitySnapshot) {
   }
 
   return queue;
-}
-
-function setInputValue(input: HTMLInputElement, value: string) {
-  input.value = value;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 export class StorageOrderLabelPrintController {
@@ -48,7 +42,6 @@ export class StorageOrderLabelPrintController {
 
   private readonly handleButtonClick = () => {
     this.pendingSnapshot = this.capturePrintQuantitySnapshot();
-    logErpDebug('Label print snapshot captured:', this.pendingSnapshot);
     this.scheduleModalApply();
   };
 
@@ -93,22 +86,13 @@ export class StorageOrderLabelPrintController {
     return document.querySelector<HTMLTableElement>('#bestell_artikel');
   }
 
-  private getColumnIndex(table: HTMLTableElement, headerLabel: string) {
-    const headers = Array.from(table.tHead?.querySelectorAll('th') ?? []);
-    const normalizedHeaderLabel = normalizeText(headerLabel).toLowerCase();
-
-    return headers.findIndex(
-      (header) => normalizeText(header.textContent).toLowerCase() === normalizedHeaderLabel,
-    );
-  }
-
   private capturePrintQuantitySnapshot(): PrintQuantitySnapshot {
     const table = this.getOrderTable();
     if (!table) {
       return [];
     }
 
-    const pendingColumnIndex = this.getColumnIndex(table, 'Anzahl einbuchen');
+    const pendingColumnIndex = getColumnIndex(table, 'Anzahl einbuchen');
 
     return Array.from(table.tBodies[0]?.rows ?? [])
       .filter((row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement)
@@ -164,7 +148,6 @@ export class StorageOrderLabelPrintController {
     const modal = document.querySelector<HTMLElement>('#myModal');
     const printRows = Array.from(modal?.querySelectorAll<HTMLElement>('.dd-item.row') ?? []);
     if (!modal || printRows.length === 0) {
-      logErpDebug('Label print sync waiting for modal rows.');
       return false;
     }
 
@@ -176,41 +159,19 @@ export class StorageOrderLabelPrintController {
       );
       const printCountInput = row.querySelector<HTMLInputElement>('.print_count');
       if (!artId || !printCountInput) {
-        logErpDebug('Label print sync skipped row without art_id or print_count.', {
-          artId,
-          hasPrintCountInput: Boolean(printCountInput),
-        });
         continue;
       }
 
       const quantities = printQueue.get(artId);
       const nextQuantity = quantities?.shift();
       if (typeof nextQuantity === 'undefined') {
-        logErpDebug('Label print sync found no captured quantity for modal row.', {
-          artId,
-          currentModalValue: printCountInput.value,
-        });
         continue;
       }
 
-      logErpDebug('Label print sync applying quantity.', {
-        artId,
-        previousModalValue: printCountInput.value,
-        nextQuantity,
-      });
       setInputValue(printCountInput, nextQuantity);
       if (quantities && quantities.length === 0) {
         printQueue.delete(artId);
       }
-    }
-
-    if (printQueue.size > 0) {
-      logErpDebug('Label print sync had unmatched captured quantities left over.', {
-        unmatched: Array.from(printQueue.entries()).map(([artId, quantities]) => ({
-          artId,
-          quantities,
-        })),
-      });
     }
 
     return true;

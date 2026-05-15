@@ -181,15 +181,12 @@ export class RegistrationToRentalAutomation {
     if (!state) {
       try {
         state = await storage.getItem<RegistrationToRentalState>(STORAGE_KEY);
-        console.log('[reg-to-rental] handleNavigation: in-memory state was null, read from storage:', state);
       } catch {
-        console.log('[reg-to-rental] handleNavigation: storage read failed (cross-origin frame)');
         return;
       }
     }
 
     if (!state) {
-      console.log('[reg-to-rental] handleNavigation: no state, skipping. path =', location.pathname);
       return;
     }
 
@@ -199,10 +196,8 @@ export class RegistrationToRentalAutomation {
     }
 
     const path = location.pathname;
-    console.log('[reg-to-rental] handleNavigation: state =', state, 'path =', path);
 
     if (path === RESULT_PATH) {
-      console.log('[reg-to-rental] Redirecting to /rental/rent');
       (window.top ?? window).location.assign('/rental/rent');
       return;
     }
@@ -218,13 +213,10 @@ export class RegistrationToRentalAutomation {
   async start() {
     try {
       this.state = await storage.getItem<RegistrationToRentalState>(STORAGE_KEY);
-      console.log('[reg-to-rental] start(): initial state =', this.state, 'path =', location.pathname);
       this.unwatchState = storage.watch<RegistrationToRentalState>(STORAGE_KEY, (newValue) => {
-        console.log('[reg-to-rental] storage.watch fired: state =', newValue);
         this.state = newValue;
       });
     } catch {
-      console.log('[reg-to-rental] start(): storage inaccessible, exiting (cross-origin frame)');
       return;
     }
     window.addEventListener('wxt:locationchange', this.handleNavigation);

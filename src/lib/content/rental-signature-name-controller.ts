@@ -1,12 +1,7 @@
+import { setInputValue } from './dom';
+
 const GREETING_SELECTOR = '[role="dialog"] .ql-editor';
 const NAME_INPUT_SELECTOR = 'input[name="rental.rent.modal.signature.name"]';
-
-function setInputValue(input: HTMLInputElement, value: string) {
-  if (input.value === value) return;
-  input.value = value;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-}
 
 export class RentalSignatureNameController {
   private observer: MutationObserver | null = null;

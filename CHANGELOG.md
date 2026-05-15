@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.2] - 2026-05-15
+
+### Improvements
+- Extracted shared `setInputValue` and `getColumnIndex` DOM utilities, replacing identical copies in three controllers.
+- Removed all debug `console.log` and `logErpDebug` calls from content scripts and background.
+
 ## [0.8.1] - 2026-05-15
 
 ### Improvements

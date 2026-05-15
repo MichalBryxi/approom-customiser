@@ -15,13 +15,10 @@ export default defineBackground({
     //   onCompleted        — full HTTP page load (form POSTed to server)
     //   onHistoryStateUpdated — SPA pushState navigation (Angular router)
     const handleResultPage = async (details: chrome.webNavigation.WebNavigationFramedCallbackDetails) => {
-      console.log('[bg] result page detected via', details.type ?? 'navigation', 'tab =', details.tabId, 'frame =', details.frameId);
       const state = await storage.getItem(STORAGE_KEY);
       if (!state) {
-        console.log('[bg] no rental state in storage, skipping redirect');
         return;
       }
-      console.log('[bg] rental state found, redirecting tab to /rental/rent');
       await chrome.tabs.update(details.tabId, { url: 'https://erp.app-room.ch/rental/rent' });
     };
 

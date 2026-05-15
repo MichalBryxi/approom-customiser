@@ -1,5 +1,5 @@
 import { CHECK_IN_STATUS_COLORS } from '../check-in-status-colors';
-import { normalizeText } from '../text';
+import { getColumnIndex } from './dom';
 
 const WARNING_ROW_ATTRIBUTE = 'data-app-room-check-in-warning';
 const COMPLETE_ROW_ATTRIBUTE = 'data-app-room-check-in-complete';
@@ -70,15 +70,6 @@ export class StorageOrderWarningController {
     this.boundTable = null;
   }
 
-  private getColumnIndex(table: HTMLTableElement, headerLabel: string) {
-    const headers = Array.from(table.tHead?.querySelectorAll('th') ?? []);
-    const normalizedHeaderLabel = normalizeText(headerLabel).toLowerCase();
-
-    return headers.findIndex(
-      (header) => normalizeText(header.textContent).toLowerCase() === normalizedHeaderLabel,
-    );
-  }
-
   private getInputFromColumn(row: HTMLTableRowElement, columnIndex: number) {
     if (columnIndex < 0) {
       return null;
@@ -88,9 +79,9 @@ export class StorageOrderWarningController {
   }
 
   private updateWarnings(table: HTMLTableElement) {
-    const orderedColumnIndex = this.getColumnIndex(table, 'Anzahl bestellt');
-    const checkedInColumnIndex = this.getColumnIndex(table, 'Anzahl eingebucht');
-    const pendingColumnIndex = this.getColumnIndex(table, 'Anzahl einbuchen');
+    const orderedColumnIndex = getColumnIndex(table, 'Anzahl bestellt');
+    const checkedInColumnIndex = getColumnIndex(table, 'Anzahl eingebucht');
+    const pendingColumnIndex = getColumnIndex(table, 'Anzahl einbuchen');
 
     Array.from(table.tBodies[0]?.rows ?? []).forEach((row) => {
       if (!(row instanceof HTMLTableRowElement)) {

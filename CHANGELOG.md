@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.8.3] - 2026-05-16
+
+### Changes
+- Settings are now stored in `local` (non-synced) storage. Each device keeps its own configuration. Existing synced settings are not migrated — defaults apply on first run.
+
 ## [0.8.2] - 2026-05-15
 
 ### Improvements

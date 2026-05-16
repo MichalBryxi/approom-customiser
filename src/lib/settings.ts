@@ -409,9 +409,9 @@ const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as ExtensionSettingId[];
 const SETTING_STORAGE_KEYS = SETTINGS_KEYS.reduce(
   (acc, key) => ({
     ...acc,
-    [key]: `sync:${key}` as const,
+    [key]: `local:${key}` as const,
   }),
-  {} as Record<ExtensionSettingId, `sync:${ExtensionSettingId}`>,
+  {} as Record<ExtensionSettingId, `local:${ExtensionSettingId}`>,
 );
 
 export async function getSettings(): Promise<ExtensionSettings> {

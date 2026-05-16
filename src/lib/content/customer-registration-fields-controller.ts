@@ -168,7 +168,42 @@ export class CustomerRegistrationFieldsController {
     this.bindLanguageObserver();
     this.bindCurrentForm();
     this.applyFieldCustomisations();
+    this.applyDefaultLanguage();
     this.form?.querySelector<HTMLInputElement>('input[formcontrolname="firstname"]')?.focus();
+  }
+
+  private applyDefaultLanguage() {
+    const targetLang = this.settings.customerRegistrationDefaultLanguage;
+    const ngSelect = document.querySelector<HTMLElement>('ng-select.language-select');
+    if (!ngSelect) return;
+
+    const currentLang = ngSelect
+      .querySelector<HTMLElement>('.ng-value-container .ng-value span[lang]')
+      ?.getAttribute('lang');
+    if (currentLang === targetLang) return;
+
+    // ng-select opens on mousedown on the container div. A subsequent bubbling click
+    // would reach ng-select's document outside-click handler and immediately close it
+    // again, so we dispatch only mousedown.
+    const container = ngSelect.querySelector<HTMLElement>('.ng-select-container');
+    if (!container) return;
+
+    // Watch for the dropdown panel to appear, then select the target option.
+    const observer = new MutationObserver(() => {
+      const option = ngSelect
+        .querySelector<HTMLElement>(`.ng-dropdown-panel .ng-option span[lang="${targetLang}"]`)
+        ?.closest<HTMLElement>('.ng-option');
+      if (!option) return;
+      observer.disconnect();
+      option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }));
+      option.click();
+    });
+    observer.observe(ngSelect, { childList: true, subtree: true });
+    setTimeout(() => observer.disconnect(), 2000);
+
+    setTimeout(() => {
+      container.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }));
+    }, 100);
   }
 
   private bindLanguageObserver() {

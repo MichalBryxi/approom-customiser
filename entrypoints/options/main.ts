@@ -9,7 +9,7 @@ import {
 } from '../../src/lib/settings';
 import { reloadErpTabs } from '../../src/lib/extension-tabs';
 import type { FeatureDescriptionPart } from '../../src/lib/settings';
-import type { ExtensionSettings } from '../../src/lib/types';
+import type { CustomerRegistrationLanguage, ExtensionSettings } from '../../src/lib/types';
 
 function appendDescription(
   descriptionElement: HTMLElement,
@@ -184,7 +184,7 @@ function createCustomerRegistrationMatrix(settings: ExtensionSettings) {
   return wrapper;
 }
 
-function createNestedField(labelText: string, input: HTMLInputElement) {
+function createNestedField(labelText: string, input: HTMLInputElement | HTMLSelectElement) {
   const wrapper = document.createElement('div');
   wrapper.className = 'options__nested-options';
   const label = document.createElement('label');
@@ -213,6 +213,26 @@ const FEATURE_EXTRA_CONFIG: Partial<
   },
 
   customerRegistrationFields(body, settings) {
+    const langOptions: { value: CustomerRegistrationLanguage; label: string }[] = [
+      { value: 'de', label: 'Deutsch' },
+      { value: 'en', label: 'English' },
+      { value: 'fr', label: 'Français' },
+      { value: 'it', label: 'Italiano' },
+    ];
+    const select = document.createElement('select');
+    select.className = 'options__matrix-text';
+    select.name = 'customerRegistrationDefaultLanguage';
+    for (const { value, label } of langOptions) {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      opt.selected = value === (settings.customerRegistrationDefaultLanguage ?? DEFAULT_SETTINGS.customerRegistrationDefaultLanguage);
+      select.append(opt);
+    }
+    select.addEventListener('change', () => {
+      void updateSetting('customerRegistrationDefaultLanguage', select.value as CustomerRegistrationLanguage).then(reloadErpTabs);
+    });
+    body.append(createNestedField('Standardsprache', select));
     body.append(createCustomerRegistrationMatrix(settings));
   },
 

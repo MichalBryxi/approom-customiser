@@ -52,6 +52,7 @@ export type ExtensionSettings = {
   rechnungenMitarbeiterPreisProzent: number;
   rentalErfasstDurchFilter: boolean;
   rentalErfasstDurchFilterPattern: string;
+  customerRegistrationDefaultLanguage: CustomerRegistrationLanguage;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &
   Record<CustomerRegistrationFieldLabelSettingId, string>;

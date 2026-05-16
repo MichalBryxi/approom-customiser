@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.0] - 2026-05-16
+
+### New features
+- **Kundenregistrierung — Standardsprache**: configurable default language for the registration form. On every page load the extension automatically selects the configured language in the "Sprachauswahl" dropdown. Default: English.
+
 ## [0.9.1] - 2026-05-16
 
 ### Changes

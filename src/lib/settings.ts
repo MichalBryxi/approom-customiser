@@ -242,6 +242,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rechnungenMitarbeiterPreisProzent: 12,
   rentalErfasstDurchFilter: true,
   rentalErfasstDurchFilterPattern: '',
+  customerRegistrationDefaultLanguage: 'en',
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
   'customerRegistrationField.lastname.moveToExtra': false,

@@ -39,7 +39,7 @@ Adds an "EP+N%" button next to the unit price field on each invoice line. One cl
 
 ---
 
-All settings are stored locally in your browser. No data is collected, transmitted, or shared.
+All settings are stored locally in your browser and are not synced across devices. Each machine keeps its own configuration. No data is collected, transmitted, or shared.
 
 ## Category
 Productivity

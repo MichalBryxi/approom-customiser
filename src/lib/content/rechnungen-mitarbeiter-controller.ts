@@ -55,9 +55,12 @@ export class RechnungenMitarbeiterController {
     if (!rowNum) return;
 
     const priceInput = document.getElementById(
-      `mat_pos_singleprice_${rowNum}`,
+      `mat_pos_rowprice_${rowNum}`,
     ) as HTMLInputElement | null;
-    if (!priceInput) return;
+    const countInput = document.getElementById(
+      `mat_pos_count_${rowNum}`,
+    ) as HTMLInputElement | null;
+    if (!priceInput || !countInput) return;
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -65,10 +68,11 @@ export class RechnungenMitarbeiterController {
     btn.style.width = '100%';
     btn.textContent = `EP+${this.prozent}%`;
     btn.setAttribute(MANAGED_ATTRIBUTE, 'true');
-    btn.addEventListener('click', () => this.applyPrice(helpIcon, btn, priceInput));
+    btn.addEventListener('click', () => this.applyPrice(helpIcon, btn, priceInput, countInput));
 
-    const syncState = () => this.syncButtonState(btn, helpIcon, priceInput);
+    const syncState = () => this.syncButtonState(btn, helpIcon, priceInput, countInput);
     priceInput.addEventListener('blur', syncState);
+    countInput.addEventListener('blur', syncState);
     syncState();
 
     const wrapper = document.createElement('div');
@@ -78,21 +82,27 @@ export class RechnungenMitarbeiterController {
     priceInput.after(wrapper);
   }
 
-  private syncButtonState(btn: HTMLButtonElement, helpIcon: HTMLElement, priceInput: HTMLInputElement) {
-    const ep = this.parseEp(helpIcon);
-    if (ep === null) return;
-    const current = parseFloat(priceInput.value.replace(',', '.'));
-    btn.disabled = !isNaN(current) && Math.abs(current - this.computePrice(ep)) < 0.005;
+  private parseCount(countInput: HTMLInputElement): number | null {
+    const count = parseFloat(countInput.value.replace(',', '.'));
+    return isNaN(count) || count <= 0 ? null : count;
   }
 
-  private applyPrice(helpIcon: HTMLElement, btn: HTMLButtonElement, priceInput: HTMLInputElement) {
+  private syncButtonState(btn: HTMLButtonElement, helpIcon: HTMLElement, priceInput: HTMLInputElement, countInput: HTMLInputElement) {
     const ep = this.parseEp(helpIcon);
-    if (ep === null) return;
+    const count = this.parseCount(countInput);
+    if (ep === null || count === null) return;
+    const current = parseFloat(priceInput.value.replace(',', '.'));
+    btn.disabled = !isNaN(current) && current.toFixed(2) === (this.computePrice(ep) * count).toFixed(2);
+  }
 
-    priceInput.value = this.computePrice(ep).toFixed(2);
+  private applyPrice(helpIcon: HTMLElement, btn: HTMLButtonElement, priceInput: HTMLInputElement, countInput: HTMLInputElement) {
+    const ep = this.parseEp(helpIcon);
+    const count = this.parseCount(countInput);
+    if (ep === null || count === null) return;
+
+    priceInput.value = (this.computePrice(ep) * count).toFixed(2);
     priceInput.dispatchEvent(new Event('change', { bubbles: true }));
-    priceInput.dispatchEvent(new Event('keyup', { bubbles: true }));
 
-    this.syncButtonState(btn, helpIcon, priceInput);
+    this.syncButtonState(btn, helpIcon, priceInput, countInput);
   }
 }

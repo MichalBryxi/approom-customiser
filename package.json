@@ -1,6 +1,6 @@
 {
   "name": "approom-customiser",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "repository": {
     "type": "git",
@@ -14,7 +14,6 @@
     "build": "wxt build --browser chrome",
     "zip": "wxt zip --browser chrome",
     "clean": "wxt clean",
-    "submit:init": "wxt submit init",
     "submit": "wxt submit",
     "postinstall": "wxt prepare",
     "release:patch": "npm version patch && pnpm build && pnpm zip",

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.1] - 2026-05-16
+
+### Changes
+- **Rechnungen — Mitarbeiterpreis**: button now sits in the "Preis" column and writes `(EP+N%) × Menge` directly to the total price field. Button disabled state uses exact comparison.
+- Removed stale `submit:init` script (command no longer exists in current WXT).
+
 ## [0.9.0] - 2026-05-16
 
 ### Changes

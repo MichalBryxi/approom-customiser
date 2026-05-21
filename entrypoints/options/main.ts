@@ -333,4 +333,11 @@ async function renderOptions() {
   }
 }
 
+function renderVersion() {
+  const footer = document.getElementById('options-footer');
+  if (!footer) return;
+  footer.textContent = `v${chrome.runtime.getManifest().version}`;
+}
+
 void renderOptions();
+renderVersion();

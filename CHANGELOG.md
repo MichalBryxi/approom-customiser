@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0] - 2026-05-21
+
+### New features
+- **Einstellungen — Versionsanzeige**: the extension version is now displayed in the footer of the settings page.
+
+### Changes
+- **Release-Automatisierung**: `pnpm release:patch/minor/major` now fully automates the release — bumps `package.json`, builds, zips, and pushes the commit + tag to GitHub. Update `CHANGELOG.md` before running.
+
 ## [0.11.0] - 2026-05-21
 
 ### New features

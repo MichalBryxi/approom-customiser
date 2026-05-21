@@ -184,3 +184,10 @@ body {
   border: 1px solid #f4c7d0;
   border-radius: 8px;
 }
+
+.options__footer {
+  margin-top: 24px;
+  text-align: right;
+  font-size: 12px;
+  color: #9aa5b4;
+}

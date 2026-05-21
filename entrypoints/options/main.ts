@@ -249,18 +249,28 @@ const FEATURE_EXTRA_CONFIG: Partial<
   },
 
   rechnungenMitarbeiterPreis(body, settings) {
-    const input = document.createElement('input');
-    input.className = 'options__matrix-text';
-    input.type = 'number';
-    input.min = '0';
-    input.step = '1';
-    input.name = 'rechnungenMitarbeiterPreisProzent';
-    input.value = String(settings.rechnungenMitarbeiterPreisProzent ?? DEFAULT_SETTINGS.rechnungenMitarbeiterPreisProzent);
-    input.addEventListener('change', () => {
-      const val = parseFloat(input.value);
+    const percentInput = document.createElement('input');
+    percentInput.className = 'options__matrix-text';
+    percentInput.type = 'number';
+    percentInput.min = '0';
+    percentInput.step = '1';
+    percentInput.name = 'rechnungenMitarbeiterPreisProzent';
+    percentInput.value = String(settings.rechnungenMitarbeiterPreisProzent ?? DEFAULT_SETTINGS.rechnungenMitarbeiterPreisProzent);
+    percentInput.addEventListener('change', () => {
+      const val = parseFloat(percentInput.value);
       if (!isNaN(val)) void updateSetting('rechnungenMitarbeiterPreisProzent', val).then(reloadErpTabs);
     });
-    body.append(createNestedField('Mitarbeiterpreis: EP + N%', input));
+    body.append(createNestedField('Mitarbeiterpreis: EP + N%', percentInput));
+
+    const patternInput = document.createElement('input');
+    patternInput.className = 'options__matrix-text';
+    patternInput.type = 'text';
+    patternInput.name = 'rechnungenMitarbeiterPreisKundentypPattern';
+    patternInput.value = settings.rechnungenMitarbeiterPreisKundentypPattern ?? DEFAULT_SETTINGS.rechnungenMitarbeiterPreisKundentypPattern;
+    patternInput.addEventListener('change', () => {
+      void updateSetting('rechnungenMitarbeiterPreisKundentypPattern', patternInput.value).then(reloadErpTabs);
+    });
+    body.append(createNestedField('Nur anzeigen wenn Kundentyp passt (Regex, leer = immer)', patternInput));
   },
 };
 

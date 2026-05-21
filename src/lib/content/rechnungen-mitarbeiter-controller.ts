@@ -6,6 +6,7 @@ const MANAGED_ATTRIBUTE = 'data-app-room-ma-btn';
 export class RechnungenMitarbeiterController {
   private observer: MutationObserver | null = null;
   private prozent = 12;
+  private kundentypPattern: RegExp | null = null;
 
   mount(tbody: HTMLElement) {
     void this.initialize(tbody);
@@ -14,6 +15,8 @@ export class RechnungenMitarbeiterController {
   private async initialize(tbody: HTMLElement) {
     const settings = await getSettings();
     this.prozent = settings.rechnungenMitarbeiterPreisProzent;
+    const pattern = settings.rechnungenMitarbeiterPreisKundentypPattern.trim();
+    this.kundentypPattern = pattern ? new RegExp(pattern, 'i') : null;
     injectStyle('app-room-ma-btn-styles', `
       button[${MANAGED_ATTRIBUTE}]:disabled:hover,
       button[${MANAGED_ATTRIBUTE}]:disabled:focus {
@@ -30,7 +33,15 @@ export class RechnungenMitarbeiterController {
     this.observer.observe(tbody, { childList: true, subtree: true });
   }
 
+  private kundentypMatches(): boolean {
+    if (!this.kundentypPattern) return true;
+    return Array.from(
+      document.querySelectorAll<HTMLElement>('#s2id_typ_id .select2-search-choice div'),
+    ).some((div) => this.kundentypPattern!.test(div.textContent?.trim() ?? ''));
+  }
+
   private applyToAllRows(tbody: HTMLElement) {
+    if (!this.kundentypMatches()) return;
     for (const row of tbody.querySelectorAll<HTMLTableRowElement>('tr')) {
       this.applyToRow(row);
     }

@@ -50,6 +50,7 @@ export type ExtensionSettings = {
   rentalSignatureSaveButton: boolean;
   rechnungenMitarbeiterPreis: boolean;
   rechnungenMitarbeiterPreisProzent: number;
+  rechnungenMitarbeiterPreisKundentypPattern: string;
   rentalErfasstDurchFilter: boolean;
   rentalErfasstDurchFilterPattern: string;
   customerRegistrationDefaultLanguage: CustomerRegistrationLanguage;

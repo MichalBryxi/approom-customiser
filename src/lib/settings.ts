@@ -240,6 +240,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalSignatureSaveButton: true,
   rechnungenMitarbeiterPreis: true,
   rechnungenMitarbeiterPreisProzent: 12,
+  rechnungenMitarbeiterPreisKundentypPattern: '.*Mitarbeiter.*',
   rentalErfasstDurchFilter: true,
   rentalErfasstDurchFilterPattern: '',
   customerRegistrationDefaultLanguage: 'en',

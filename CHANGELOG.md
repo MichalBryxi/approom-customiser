@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.11.0] - 2026-05-21
+
+### New features
+- **Rechnungen — Mitarbeiterpreis: Kundentyp-Filter**: the EP+N% button is now only shown when the selected "Kundentyp" tags match a configurable regex pattern. Default: `.*Mitarbeiter.*`. Empty pattern disables the filter (button always shown).
+
 ## [0.10.0] - 2026-05-16
 
 ### New features

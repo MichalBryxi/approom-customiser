@@ -48,11 +48,9 @@ export class RentalListSignatureHighlightController {
 
     if (tryHighlight()) return;
 
-    let attempts = 0;
-    const retry = () => {
-      if (tryHighlight() || ++attempts >= 10) return;
-      requestAnimationFrame(retry);
-    };
-    requestAnimationFrame(retry);
+    const observer = new MutationObserver(() => {
+      if (tryHighlight()) observer.disconnect();
+    });
+    observer.observe(actionContainer, { childList: true, subtree: true });
   }
 }

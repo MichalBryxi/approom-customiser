@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.13.1] - 2026-05-23
+
+### Changes
+- **Unterschrift-Button hervorheben (Liste)**: replaced rAF retry loop with a container-scoped `MutationObserver` — purely event-driven, no artificial attempt cap or timeout.
+
 ## [0.13.0] - 2026-05-23
 
 ### New features

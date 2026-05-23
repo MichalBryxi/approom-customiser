@@ -35,15 +35,24 @@ export class RentalListSignatureHighlightController {
   private onActionAreaClick(event: MouseEvent) {
     const actionContainer = (event.target as Element).closest?.('.action-btn-container');
     if (!actionContainer) return;
-    requestAnimationFrame(() => {
-      const openDropdown = actionContainer.querySelector('.dropdown-open');
-      if (!openDropdown) return;
-      const btn = Array.from(openDropdown.querySelectorAll<HTMLButtonElement>('button')).find(
-        (b) => b.textContent?.includes('Unterschreiben'),
+
+    const tryHighlight = () => {
+      const btn = Array.from(actionContainer.querySelectorAll<HTMLButtonElement>('button')).find(
+        (b) => b.textContent?.trim().includes('Unterschreiben') && !b.hasAttribute(MANAGED_ATTRIBUTE),
       );
-      if (!btn || btn.hasAttribute(MANAGED_ATTRIBUTE)) return;
+      if (!btn) return false;
       btn.setAttribute(MANAGED_ATTRIBUTE, 'true');
       btn.style.animation = 'approom-signature-flash 1.5s ease-in-out infinite';
-    });
+      return true;
+    };
+
+    if (tryHighlight()) return;
+
+    let attempts = 0;
+    const retry = () => {
+      if (tryHighlight() || ++attempts >= 10) return;
+      requestAnimationFrame(retry);
+    };
+    requestAnimationFrame(retry);
   }
 }

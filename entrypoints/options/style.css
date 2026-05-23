@@ -176,6 +176,38 @@ body {
   -webkit-box-decoration-break: clone;
 }
 
+.options__feature {
+  background: #f7f8fa;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+}
+
+.options__feature > summary {
+  list-style: none;
+  cursor: default;
+}
+
+.options__feature > summary::-webkit-details-marker {
+  display: none;
+}
+
+.options__feature > summary .options__toggle {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.options__feature-config {
+  padding: 4px 12px 12px 12px;
+  border-top: 1px solid #d9e2ec;
+  transition: opacity 0.2s;
+}
+
+.options__feature-config[inert] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .options__error {
   margin: 0;
   padding: 12px 14px;

@@ -317,12 +317,34 @@ async function renderOptions() {
           initialValue,
         );
 
-        input.addEventListener('change', () => {
-          void updateSetting(feature.id, input.checked).then(reloadErpTabs);
-        });
+        const extraConfigFn = FEATURE_EXTRA_CONFIG[feature.id];
 
-        body.append(wrapper);
-        FEATURE_EXTRA_CONFIG[feature.id]?.(body, settings);
+        if (extraConfigFn) {
+          const configDiv = document.createElement('div');
+          configDiv.className = 'options__feature-config';
+          configDiv.inert = !initialValue;
+          extraConfigFn(configDiv, settings);
+
+          wrapper.addEventListener('click', (e) => e.stopPropagation());
+          input.addEventListener('change', () => {
+            void updateSetting(feature.id, input.checked).then(reloadErpTabs);
+            configDiv.inert = !input.checked;
+          });
+
+          const summary = document.createElement('summary');
+          summary.append(wrapper);
+
+          const details = document.createElement('details');
+          details.className = 'options__feature';
+          details.open = true;
+          details.append(summary, configDiv);
+          body.append(details);
+        } else {
+          input.addEventListener('change', () => {
+            void updateSetting(feature.id, input.checked).then(reloadErpTabs);
+          });
+          body.append(wrapper);
+        }
       }
 
       form.append(section);

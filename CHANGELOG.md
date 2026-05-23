@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.13.0] - 2026-05-23
+
+### New features
+- **Unterschrift-Button hervorheben (Liste)**: the existing "Unterschrift-Button hervorheben" toggle now also pulses the "Unterschreiben" button red in the action dropdown on the rental list page. Uses a MutationObserver to detect the dynamically-inserted dropdown content.
+- **Einstellungen — Untergeordnete Optionen**: feature toggles that have sub-settings are now wrapped in a collapsible `<details>` block. Sub-settings are visually greyed out and non-interactive while the parent feature is disabled.
+
 ## [0.12.0] - 2026-05-21
 
 ### New features

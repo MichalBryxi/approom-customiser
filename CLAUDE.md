@@ -16,7 +16,13 @@ pnpm clean        # Clean build artifacts
 pnpm release:patch / release:minor / release:major  # Bump version, build, zip, commit, tag, push
 ```
 
-The release commands are fully automated via npm lifecycle hooks (`version` / `postversion`). The only manual step before running one is updating `CHANGELOG.md`.
+The release commands are fully automated via npm lifecycle hooks (`version` / `postversion`). The required steps in order:
+
+1. Add a new `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` for the version you are about to release (check `package.json` for current version and increment accordingly)
+2. Commit the changelog: `git add CHANGELOG.md && git commit -m "docs: update changelog for vX.Y.Z"`
+3. Run `pnpm release:patch` / `release:minor` / `release:major` — this bumps `package.json`, builds, zips, commits the version bump, tags, and pushes everything
+
+Never run the release command before the changelog entry is committed — the tag will point to a commit without the corresponding changelog entry.
 
 Chromium binary is auto-detected at `/Applications/Chromium.app/Contents/MacOS/Chromium` on macOS. Override: `CHROMIUM_BIN="/path/to/chromium" pnpm dev`.
 

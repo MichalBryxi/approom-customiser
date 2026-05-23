@@ -2,6 +2,7 @@ import { CustomerRegistrationFieldsController } from './customer-registration-fi
 import type { ContentFeatureDefinition } from './feature-runtime';
 import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
 import { RentalErfasstDurchFilterController } from './rental-erfasst-durch-filter-controller';
+import { RentalListSignatureHighlightController } from './rental-list-signature-highlight-controller';
 import { RentalPrintFeature } from './rental-print-feature';
 import { RentalSignatureNameController } from './rental-signature-name-controller';
 import { RentalSignatureSaveButtonController } from './rental-signature-save-button-controller';
@@ -16,6 +17,7 @@ const customerRegistrationFieldsController = new CustomerRegistrationFieldsContr
 const unterschriftHighlightController = new UnterschriftHighlightController();
 const rechnungenMitarbeiterController = new RechnungenMitarbeiterController();
 const rentalErfasstDurchFilterController = new RentalErfasstDurchFilterController();
+const rentalListSignatureHighlightController = new RentalListSignatureHighlightController();
 const rentalSignatureNameController = new RentalSignatureNameController();
 const rentalSignatureSaveButtonController = new RentalSignatureSaveButtonController();
 
@@ -39,6 +41,15 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     anchor: rentalTimelineButtonAnchor,
     append: 'before',
     mount: (wrapper) => rentalPrintFeature.mount(wrapper),
+  },
+  {
+    id: 'unterschriftHighlight',
+    label: 'Unterschrift-Button hervorheben (Liste)',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalTimelineButtonAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListSignatureHighlightController.mount()),
   },
   {
     id: 'checkInQuantityWarning',

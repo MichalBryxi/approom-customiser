@@ -370,8 +370,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   {
     id: 'unterschriftHighlight',
     groupId: 'rental-rent',
-    label: 'Unterschrift-Button hervorheben',
-    description: 'Hebt den Unterschrift-Button in der Mietansicht rot blinkend hervor.',
+    label: 'Nicht unterschriebene Vermietungen markieren',
+    description: 'Hebt den "Unterschreiben"-Button rot blinkend hervor: auf der Vermietungsliste beim Öffnen des Aktionsmenüs, auf der Detailseite direkt am Button.',
   },
   {
     id: 'rentalHideRechnungButton',

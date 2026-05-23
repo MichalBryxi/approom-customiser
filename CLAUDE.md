@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-Chrome Manifest V3 extension (WXT + TypeScript) that injects configurable workflow helpers into the App-Room ERP at `https://erp.app-room.ch/*`. Each helper is a small feature tied to a specific ERP page that the user can toggle on/off via the extension settings page. The extension has no backend — all state is stored in Chrome sync storage.
+Chrome Manifest V3 extension (WXT + TypeScript) that injects configurable workflow helpers into the App-Room ERP at `https://erp.app-room.ch/*`. Each helper is a small feature tied to a specific ERP page that the user can toggle on/off via the extension settings page. The extension has no backend — all state is stored in Chrome local (per-device) storage.
 
 ## Commands
 
@@ -13,8 +13,10 @@ pnpm dev          # Start WXT dev workflow; launches Chromium and opens erp.app-
 pnpm build        # Production build → build/chrome-mv3/
 pnpm zip          # Chrome Web Store ZIP
 pnpm clean        # Clean build artifacts
-pnpm release:patch / release:minor / release:major  # Bump version + build + zip
+pnpm release:patch / release:minor / release:major  # Bump version, build, zip, commit, tag, push
 ```
+
+The release commands are fully automated via npm lifecycle hooks (`version` / `postversion`). The only manual step before running one is updating `CHANGELOG.md`.
 
 Chromium binary is auto-detected at `/Applications/Chromium.app/Contents/MacOS/Chromium` on macOS. Override: `CHROMIUM_BIN="/path/to/chromium" pnpm dev`.
 
@@ -29,9 +31,9 @@ Load unpacked in `chrome://extensions`: `build/chromium-mv3-dev` for dev, `build
 | File | Role |
 |------|------|
 | `entrypoints/content.ts` | Content script; registers on all `erp.app-room.ch` URLs; starts `ContentFeatureRuntime` |
-| `entrypoints/background.ts` | Service worker; calls `ensureDefaultSettings()` on install; handles print job messages |
+| `entrypoints/background.ts` | Service worker; handles print job messages and registration→rental redirect |
 | `entrypoints/popup/main.ts` | Compact popup: global on/off toggle + link to settings |
-| `entrypoints/options/main.ts` | Full settings page: per-feature toggles + inline config (rental skip pattern, registration field matrix) |
+| `entrypoints/options/main.ts` | Full settings page: per-feature toggles + inline config (rental skip pattern, registration field matrix); renders extension version in footer |
 | `entrypoints/print/main.ts` | Extension print preview page used by the rental print feature |
 
 ### Feature registry pattern
@@ -51,15 +53,24 @@ Load unpacked in `chrome://extensions`: `build/chromium-mv3-dev` for dev, `build
 
 For behavior-only features (no visible UI), mount a hidden wrapper using the `mountHiddenFeature` helper in feature-config.ts.
 
+**The same `FeatureId` can appear more than once in `CONTENT_FEATURES`** (e.g. to target both the list page and the detail page under one settings toggle). Both entries are mounted/unmounted based on the single shared setting — add the new types/settings entry once, register two `CONTENT_FEATURES` entries.
+
 ### Existing features
 
 | `FeatureId` | ERP URL | Anchor selector | What it does |
 |---|---|---|---|
-| `rentalPrintButton` | `/rental/rent` | XPath: button containing "Zeitachse" | Adds "Drücken" to row action menus; opens print preview with row data |
-| `barcodeCheckIn` | `/start.php?men_link=storage` | `#panel_current_order_step2` | Barcode input that increments matching article quantities |
-| `checkInQuantityWarning` | same | `#bestell_artikel` | Color-highlights rows by check-in status (warning / complete) |
-| `printLabelsByCheckInQuantity` | same | `#etiketten_button` | Auto-fills label-print quantities from current check-in amounts |
-| `customerRegistrationFields` | `/customer_registration/customer` | `app-registration form` | Per-field: move to "Extra" section, mark mandatory, override multilingual labels |
+| `rentalPrintButton` | `/rental/rent` | XPath: button "Zeitachse" | Adds "Drücken" to row action menus; opens print preview with row data |
+| `unterschriftHighlight` | `/rental/rent` | XPath: button "Zeitachse" | On dropdown open in the action column, blinks "Unterschreiben" button red |
+| `unterschriftHighlight` | `/rental/rent/:id` | XPath: button "Unterschrift" | Blinks the "Unterschrift" button red on the rental detail page |
+| `rentalHideRechnungButton` | `/rental/rent/:id` | XPath: button "Rechnung" | Hides the "Rechnung" button |
+| `rentalSignatureNamePrefill` | `/rental/rent/:id` | XPath: button "Unterschrift" | Pre-fills the name field in the signature dialog |
+| `rentalSignatureSaveButton` | `/rental/rent/:id` | XPath: button "Unterschrift" | Styles the signature dialog save button green |
+| `rentalErfasstDurchFilter` | `/rental/rent/new` | `input[name="rental.rent.form.user"]` | Filters "Erfasst durch" dropdown by regex |
+| `checkInQuantityWarning` | `/start.php?men_link=storage` | `#bestell_artikel` | Color-highlights rows by check-in status |
+| `printLabelsByCheckInQuantity` | same | `#etiketten_button` | Auto-fills label-print quantities from check-in amounts |
+| `customerRegistrationFields` | `/customer_registration/customer` | `app-registration form button[type="submit"]` | Per-field: move to Extra, mark mandatory, override multilingual labels; sets default language |
+| `registrationToRental` | same | same | Adds a second submit button that opens a new rental pre-filled with the customer |
+| `rechnungenMitarbeiterPreis` | `/start.php?men_tool=rechnungen` | `#positionen` | Adds EP+N% button per invoice line; only shown when Kundentyp matches a regex |
 
 ### Settings model
 
@@ -112,3 +123,10 @@ Consequences:
 - Use stable ERP DOM selectors: element IDs, `formcontrolname` attributes, known table IDs — not fragile class names
 - When writing to Angular-backed inputs: set the DOM `.value` and dispatch bubbling `input` and `change` events so Angular's form state stays in sync
 - Avoid broad refactors and unrelated formatting changes — the repo is intentionally small and feature-focused
+- **Code identifiers must be in English** (class names, method names, variable names, data-attribute values). User-facing strings — settings labels, descriptions, UI button text matches — stay in German.
+
+## WXT-specific gotchas
+
+- **`world: 'MAIN'` content scripts are not auto-registered in the manifest.** WXT 0.20.x builds them as "unlisted scripts" (output appears in `build/` but has no `content_scripts` entry). To run code in the page's JS context, inject it programmatically via `chrome.scripting.executeScript` (requires `scripting` permission) or via a `<script>` tag from an isolated-world content script. For most ERP features, a direct `fetch()` from the isolated world (sharing the page's session cookies) is simpler and avoids MAIN-world complexity entirely.
+
+- **Detecting Vue dropdown open state**: Vue queues DOM updates as microtasks (`nextTick`). To react after a dropdown opens, listen on `document` for `click`, check whether the click landed inside the relevant container (e.g. `.action-btn-container`), then read the updated DOM inside `requestAnimationFrame` — microtasks drain before `rAF` fires. Do not use a MutationObserver on `document.body` for class changes; it fires far too broadly in a Vue SPA.

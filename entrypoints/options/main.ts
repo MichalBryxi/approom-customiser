@@ -358,7 +358,13 @@ async function renderOptions() {
 function renderVersion() {
   const footer = document.getElementById('options-footer');
   if (!footer) return;
-  footer.textContent = `v${chrome.runtime.getManifest().version}`;
+  const version = chrome.runtime.getManifest().version;
+  const link = document.createElement('a');
+  link.href = `https://github.com/MichalBryxi/approom-customiser/blob/main/CHANGELOG.md`;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = `v${version}`;
+  footer.append(link);
 }
 
 void renderOptions();

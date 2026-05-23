@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.14.0] - 2026-05-23
+
+### New features
+- **Einstellungen — Changelog-Link**: the version number in the settings footer is now a link to the changelog on GitHub.
+
 ## [0.13.1] - 2026-05-23
 
 ### Changes

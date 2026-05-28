@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.15.0] - 2026-05-28
+
+### Improvements
+- **Rental print button — rental period and time-of-day indicator**: the print table now shows Mietbeginn and Mietende from the overview list for each position — inline, in smaller text, next to the rental article name. Bookings starting before 12:00 get a **dashed** coloured top bar (morning); from 12:00 onwards a **solid** bar (afternoon/evening). This makes it easy to distinguish morning and afternoon groups at a glance on the printout.
+
 ## [0.14.0] - 2026-05-23
 
 ### New features

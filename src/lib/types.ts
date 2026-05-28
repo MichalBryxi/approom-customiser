@@ -61,6 +61,7 @@ export type ExtensionSettings = {
 export type PrintJobEntry = {
   key: string;
   value: string;
+  subValue?: string;
 };
 
 export type PrintRow = PrintJobEntry[];

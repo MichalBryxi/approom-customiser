@@ -64,6 +64,12 @@ const PRINT_CSS = `
     font-family: "Arial Black", Impact, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 900;
   }
+
+  .print-cell-sub {
+    font-size: 13px;
+    font-weight: 400;
+    color: #6b7280;
+  }
 `;
 
 type DetailPosition = {
@@ -76,6 +82,7 @@ type DetailPosition = {
 
 type PrintRentalGroup = {
   color: string;
+  striped: boolean;
   rows: PrintRow[];
 };
 
@@ -113,8 +120,19 @@ export class RentalPrintFeature {
         for (const cell of row) {
           const td = printWindow.document.createElement('td');
           td.className = `print-cell-${cell.key}`;
-          td.textContent = cell.value;
-          td.style.borderTop = `10px solid ${group.color}`;
+
+          td.style.borderTop = `10px ${group.striped ? 'dashed' : 'solid'} ${group.color}`;
+
+          if (cell.subValue) {
+            td.append(cell.value, ' ');
+            const subSpan = printDocument.createElement('span');
+            subSpan.className = 'print-cell-sub';
+            subSpan.textContent = cell.subValue;
+            td.append(subSpan);
+          } else {
+            td.textContent = cell.value;
+          }
+
           tr.append(td);
         }
 
@@ -340,7 +358,29 @@ export class RentalPrintFeature {
     }
   }
 
-  private detailPositionToPrintRow(customerName: string, position: DetailPosition): PrintRow | null {
+  private isBeforeNoon(dateString: string): boolean {
+    const timePart = dateString.split(' ')[1]; // e.g. "09:30"
+    if (!timePart) return false;
+    const hours = Number(timePart.split(':')[0]);
+    return hours < 12;
+  }
+
+  private getRowDates(row: HTMLTableRowElement): { start: string; end: string } {
+    const start = normalizeText(row.querySelector<HTMLElement>('.column-start-class span')?.textContent);
+    const end = normalizeText(row.querySelector<HTMLElement>('.column-end-class span')?.textContent);
+    return { start, end };
+  }
+
+  private formatDateRange(start: string, end: string) {
+    if (start && end) return `${start} – ${end}`;
+    return start || end;
+  }
+
+  private detailPositionToPrintRow(
+    customerName: string,
+    position: DetailPosition,
+    dateRange: string,
+  ): PrintRow | null {
     if (this.shouldSkipDetailPosition(position)) {
       return null;
     }
@@ -352,17 +392,17 @@ export class RentalPrintFeature {
 
     return [
       { key: 'customer', value: customerName },
-      { key: 'rentalArticle', value: position.rentalArticle },
+      { key: 'rentalArticle', value: position.rentalArticle, subValue: dateRange || undefined },
       { key: 'name', value: nameColumn },
     ];
   }
 
-  private extractDetailRows() {
+  private extractDetailRows(dateRange: string) {
     const customerName = this.getCustomerName();
     const rows: PrintRow[] = [];
 
     for (const item of this.getDetailPositionItems()) {
-      const row = this.detailPositionToPrintRow(customerName, this.readDetailPosition(item));
+      const row = this.detailPositionToPrintRow(customerName, this.readDetailPosition(item), dateRange);
       if (row) {
         rows.push(row);
       }
@@ -400,13 +440,17 @@ export class RentalPrintFeature {
       const currentRow = await this.waitForCondition(() => this.getListRows()[rowIndex], PAGE_WAIT_MS);
       const previousUrl = window.location.href;
 
+      const { start, end } = this.getRowDates(currentRow);
+      const dateRange = this.formatDateRange(start, end);
+      const striped = this.isBeforeNoon(start);
       await this.clickEditAction(currentRow);
       await this.waitForDetailPage(previousUrl);
       await this.expandDetailPositions();
-      const rows = this.extractDetailRows();
+      const rows = this.extractDetailRows(dateRange);
       if (rows.length > 0) {
         groups.push({
           color: RENTAL_GROUP_COLORS[rowIndex % RENTAL_GROUP_COLORS.length],
+          striped,
           rows,
         });
       }

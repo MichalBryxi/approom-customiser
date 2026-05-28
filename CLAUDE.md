@@ -18,9 +18,10 @@ pnpm release:patch / release:minor / release:major  # Bump version, build, zip, 
 
 The release commands are fully automated via npm lifecycle hooks (`version` / `postversion`). The required steps in order:
 
-1. Add a new `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` for the version you are about to release (check `package.json` for current version and increment accordingly)
-2. Commit the changelog: `git add CHANGELOG.md && git commit -m "docs: update changelog for vX.Y.Z"`
-3. Run `pnpm release:patch` / `release:minor` / `release:major` — this bumps `package.json`, builds, zips, commits the version bump, tags, and pushes everything
+1. Commit all feature/fix code changes that belong in the release.
+2. Add a new `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md` for the version you are about to release (check `package.json` for current version and increment accordingly). **Changelog entries must be written in English.**
+3. Commit the changelog: `git add CHANGELOG.md && git commit -m "docs: update changelog for vX.Y.Z"`
+4. Run `pnpm release:patch` / `release:minor` / `release:major` — this bumps `package.json`, builds, zips, commits the version bump, tags, and pushes everything
 
 Never run the release command before the changelog entry is committed — the tag will point to a commit without the corresponding changelog entry.
 

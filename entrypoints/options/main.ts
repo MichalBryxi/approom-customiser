@@ -209,7 +209,7 @@ const FEATURE_EXTRA_CONFIG: Partial<
     input.addEventListener('change', () => {
       void updateSetting('rentalPrintSkipMietobjektPattern', input.value).then(reloadErpTabs);
     });
-    body.append(createNestedField('Druck überspringen, wenn Mietobjekt passt', input));
+    body.append(createNestedField('Positionen überspringen, wenn Mietobjekt auf Regex passt (z. B. .*Helm.*)', input));
   },
 
   customerRegistrationFields(body, settings) {

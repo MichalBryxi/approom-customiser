@@ -324,7 +324,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'rental-rent',
     label: 'Rental-Druckbutton',
     description:
-      'Fügt in Mietansichten einen Druckbutton hinzu, um sichtbare Zeilendetails schnell zu drucken.',
+      'Fügt im Zeilenmenü der Mietliste einen „Drücken"-Button hinzu. Beim Klick öffnet sich eine Druckvorschau mit allen sichtbaren Reservierungen: pro Position eine Zeile mit Kundenname, Mietartikel + Mietbeginn/Mietende (inline, kleiner) und Name/Körpergrösse/Gewicht. Reservierungen derselben Buchung werden farbig gruppiert — gestrichelter Balken für Vormittag (Mietbeginn vor 12:00), durchgehender Balken für Nachmittag/Abend.',
   },
   {
     id: 'checkInQuantityWarning',

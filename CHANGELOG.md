@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.16.1] - 2026-05-28
+
+### Fixes
+- **Prevent sidebar collapse**: also keeps the main content area in place when the sidebar collapses — without this the content shifted left even though the sidebar stayed open.
+
 ## [0.16.0] - 2026-05-28
 
 ### New features

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.16.2] - 2026-05-28
+
+### Fixes
+- **Prevent sidebar collapse**: top and bottom parts of the sidebar are now always fully visible when the feature is on — previously they only expanded on hover.
+
 ## [0.16.1] - 2026-05-28
 
 ### Fixes

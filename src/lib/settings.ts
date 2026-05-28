@@ -232,7 +232,7 @@ export const CUSTOMER_REGISTRATION_FIELD_DEFINITIONS: CustomerRegistrationFieldD
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   extensionEnabled: true,
-  sidebarNoCollapse: true,
+  sidebarNoCollapse: false,
   rentalPrintButton: true,
   rentalPrintSkipMietobjektPattern: '.*Helm.*',
   checkInQuantityWarning: true,
@@ -329,23 +329,23 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'global',
     label: 'Seitenleiste nicht einklappen',
     description:
-      'Verhindert, dass die Seitenleiste auf 0 Breite eingeklappt wird. Die Breite bleibt fix auf dem konfigurierten Wert (--sidebar-width, Standard 248 px).',
+      'Hält die Seitenleiste immer offen — auch wenn der ERP-Schalter sie einzuklappen versucht.',
   },
   {
     id: 'rentalPrintButton',
     groupId: 'rental-rent',
     label: 'Rental-Druckbutton',
     description:
-      'Fügt im Zeilenmenü der Mietliste einen „Drücken"-Button hinzu. Beim Klick öffnet sich eine Druckvorschau mit allen sichtbaren Reservierungen: pro Position eine Zeile mit Kundenname, Mietartikel + Mietbeginn/Mietende (inline, kleiner) und Name/Körpergrösse/Gewicht. Reservierungen derselben Buchung werden farbig gruppiert — gestrichelter Balken für Vormittag (Mietbeginn vor 12:00), durchgehender Balken für Nachmittag/Abend.',
+      'Fügt in der Mietliste einen „Drücken"-Button hinzu. Beim Klick öffnet sich eine Druckansicht mit allen sichtbaren Reservierungen — pro Position eine Zeile mit Kundenname, Mietartikel, Mietzeiten sowie Name und Körpermasse. Vormittagsbuchungen sind am gestrichelten, Nachmittagsbuchungen am durchgehenden farbigen Balken erkennbar.',
   },
   {
     id: 'checkInQuantityWarning',
     groupId: 'storage-order',
     label: 'Warnung bei zu kleiner Einbuchmenge',
     description:
-      'Markiert Zeilen nach Einbuchstatus: Eingebucht + Einbuchen kleiner als Bestellt, oder Eingebucht + Einbuchen gleich Bestellt. Bereits vollständig eingebuchte Zeilen bleiben unmarkiert.',
+      'Färbt Zeilen ein, sobald die eingebuchte Menge nicht mit der bestellten Menge übereinstimmt. Vollständig abgearbeitete Zeilen bleiben unmarkiert.',
     descriptionParts: [
-      'Markiert Zeilen nach Einbuchstatus: ',
+      'Färbt Zeilen ein, sobald die eingebuchte Menge nicht mit der bestellten Menge übereinstimmt: ',
       {
         text: 'Eingebucht + Einbuchen < Bestellt',
         backgroundColor: CHECK_IN_STATUS_COLORS.warning,
@@ -355,7 +355,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
         text: 'Eingebucht + Einbuchen = Bestellt',
         backgroundColor: CHECK_IN_STATUS_COLORS.complete,
       },
-      '. Bereits vollständig eingebuchte Zeilen bleiben unmarkiert.',
+      '. Vollständig abgearbeitete Zeilen bleiben unmarkiert.',
     ],
   },
   {
@@ -363,58 +363,61 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'storage-order',
     label: 'Etiketten nach Einbuchmenge drucken',
     description:
-      'Übernimmt beim Öffnen des Etikettendrucks die aktuelle Anzahl einbuchen als Druckmenge.',
+      'Füllt beim Öffnen des Etikettendrucks die Druckmengen automatisch mit den aktuellen Einbuchmengen aus.',
   },
   {
     id: 'customerRegistrationFields',
     groupId: 'customer-registration',
     label: 'Registrierungsfelder',
     description:
-      'Passt die Kundenregistrierung über eine Feldmatrix an: Felder können in den Bereich Extra verschoben und als Pflichtfeld markiert werden.',
+      'Erlaubt es, einzelne Felder des Registrierungsformulars als Pflichtfeld zu markieren, in den Extra-Bereich zu verschieben oder mit einer eigenen Beschriftung zu versehen.',
   },
   {
     id: 'registrationToRental',
     groupId: 'customer-registration',
     label: 'Anmelden & Vermietung offen',
     description:
-      'Fügt neben "Anmelden" einen zweiten Button hinzu, der nach der Registrierung direkt zur Neuen Vermietung wechselt und den Kunden vorausfüllt.',
+      'Fügt neben „Anmelden" einen zweiten Button hinzu, der nach der Registrierung direkt eine neue Vermietung für diesen Kunden öffnet.',
   },
   {
     id: 'unterschriftHighlight',
     groupId: 'rental-rent',
     label: 'Nicht unterschriebene Vermietungen markieren',
-    description: 'Hebt den "Unterschreiben"-Button rot blinkend hervor: auf der Vermietungsliste beim Öffnen des Aktionsmenüs, auf der Detailseite direkt am Button.',
+    description:
+      'Lässt den „Unterschreiben"-Button rot aufblinken — in der Liste beim Öffnen des Aktionsmenüs und auf der Detailseite — damit keine Unterschrift vergessen geht.',
   },
   {
     id: 'rentalHideRechnungButton',
     groupId: 'rental-rent',
     label: '"Rechnung"-Button ausblenden',
-    description: 'Blendet den "Rechnung"-Button in der Mietansicht aus.',
+    description: 'Blendet den „Rechnung"-Button auf der Mietdetailseite aus.',
   },
   {
     id: 'rentalSignatureNamePrefill',
     groupId: 'rental-rent',
     label: '"Unterschrift"-Dialog: Name vorausfüllen',
     description:
-      'Füllt das "Name"-Feld im Unterschrift-Dialog automatisch mit dem Kundennamen aus dem Begrüssungstext aus.',
+      'Füllt das Namensfeld im Unterschrift-Dialog automatisch mit dem Kundennamen aus.',
   },
   {
     id: 'rentalSignatureSaveButton',
     groupId: 'rental-rent',
     label: '"Unterschrift"-Dialog: Speichern-Button grün',
-    description: 'Hebt den Speichern-Button im Unterschrift-Dialog grün hervor.',
+    description: 'Hebt den Speichern-Button im Unterschrift-Dialog grün hervor, damit er besser sichtbar ist.',
   },
   {
     id: 'rechnungenMitarbeiterPreis',
     groupId: 'office-rechnungen',
     label: 'Mitarbeiterpreis-Button',
-    description: 'Fügt neben dem EP-Hinweis einen "MA"-Button hinzu, der den Einzelpreis auf EP + N% setzt.',
+    description:
+      'Fügt pro Rechnungsposition einen Button hinzu, der den Einzelpreis auf den Einkaufspreis plus konfigurierten Aufschlag setzt.',
   },
   {
     id: 'rentalErfasstDurchFilter',
     groupId: 'rental-rent',
     label: '"Erfasst durch" filtern',
-    description: 'Blendet Einträge im "Erfasst durch"-Dropdown aus, die nicht dem konfigurierten Regex-Muster entsprechen.',
+    description:
+      'Filtert das „Erfasst durch"-Dropdown so, dass nur bestimmte Mitarbeiter zur Auswahl stehen.',
   },
 ];
 

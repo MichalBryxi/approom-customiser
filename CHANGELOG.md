@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.16.0] - 2026-05-28
+
+### New features
+- **Prevent sidebar collapse**: new global setting (enabled by default) that injects a CSS override on all ERP pages, keeping the sidebar at its configured width (`--sidebar-width`, default 248 px) and preventing it from collapsing to 0. Appears under a new "Global (alle Seiten)" section in the settings page.
+
 ## [0.15.0] - 2026-05-28
 
 ### Improvements

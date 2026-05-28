@@ -15,6 +15,15 @@ const CSS = `
   .main-content.collapsed-top {
     margin-left: var(--sidebar-width, 248px) !important;
   }
+
+  .sidebar-menu.collapsed .content .top-part {
+    transform: translate(0) !important;
+    padding: 16px 15px 12px !important;
+  }
+
+  .sidebar-menu.collapsed .content .bottom-part {
+    transform: translateY(0) !important;
+  }
 `;
 
 export class SidebarNoCollapseController {

@@ -1,4 +1,5 @@
 export type FeatureId =
+  | 'sidebarNoCollapse'
   | 'rentalPrintButton'
   | 'checkInQuantityWarning'
   | 'printLabelsByCheckInQuantity'
@@ -38,6 +39,7 @@ export type CustomerRegistrationFieldLabelSettingId =
 
 export type ExtensionSettings = {
   extensionEnabled: boolean;
+  sidebarNoCollapse: boolean;
   rentalPrintButton: boolean;
   rentalPrintSkipMietobjektPattern: string;
   checkInQuantityWarning: boolean;

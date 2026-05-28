@@ -6,10 +6,12 @@ import { RentalListSignatureHighlightController } from './rental-list-signature-
 import { RentalPrintFeature } from './rental-print-feature';
 import { RentalSignatureNameController } from './rental-signature-name-controller';
 import { RentalSignatureSaveButtonController } from './rental-signature-save-button-controller';
+import { SidebarNoCollapseController } from './sidebar-no-collapse-controller';
 import { StorageOrderLabelPrintController } from './storage-order-label-print-controller';
 import { StorageOrderWarningController } from './storage-order-warning-controller';
 import { UnterschriftHighlightController } from './unterschrift-highlight-controller';
 
+const sidebarNoCollapseController = new SidebarNoCollapseController();
 const rentalPrintFeature = new RentalPrintFeature();
 const storageOrderWarningController = new StorageOrderWarningController();
 const storageOrderLabelPrintController = new StorageOrderLabelPrintController();
@@ -34,6 +36,13 @@ function mountHiddenFeature(wrapper: HTMLElement, onMount: () => void) {
 }
 
 export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
+  {
+    id: 'sidebarNoCollapse',
+    label: 'Seitenleiste nicht einklappen',
+    url: {}, // matches all pages
+    anchor: 'body',
+    mount: (wrapper) => mountHiddenFeature(wrapper, () => sidebarNoCollapseController.mount()),
+  },
   {
     id: 'rentalPrintButton',
     label: 'Rental-Druckbutton',

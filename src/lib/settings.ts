@@ -48,6 +48,10 @@ export const CUSTOMER_REGISTRATION_LANGUAGES: Array<{
 
 export const FEATURE_SETTING_GROUPS = [
   {
+    id: 'global',
+    breadcrumb: 'Global (alle Seiten)',
+  },
+  {
     id: 'rental-rent',
     breadcrumb: 'Rental > Vermietungen',
   },
@@ -228,6 +232,7 @@ export const CUSTOMER_REGISTRATION_FIELD_DEFINITIONS: CustomerRegistrationFieldD
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   extensionEnabled: true,
+  sidebarNoCollapse: true,
   rentalPrintButton: true,
   rentalPrintSkipMietobjektPattern: '.*Helm.*',
   checkInQuantityWarning: true,
@@ -319,6 +324,13 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 };
 
 export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
+  {
+    id: 'sidebarNoCollapse',
+    groupId: 'global',
+    label: 'Seitenleiste nicht einklappen',
+    description:
+      'Verhindert, dass die Seitenleiste auf 0 Breite eingeklappt wird. Die Breite bleibt fix auf dem konfigurierten Wert (--sidebar-width, Standard 248 px).',
+  },
   {
     id: 'rentalPrintButton',
     groupId: 'rental-rent',

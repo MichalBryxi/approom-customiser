@@ -11,6 +11,10 @@ const CSS = `
   .sidebar-menu.collapsed .content {
     width: var(--sidebar-width, 248px) !important;
   }
+
+  .main-content.collapsed-top {
+    margin-left: var(--sidebar-width, 248px) !important;
+  }
 `;
 
 export class SidebarNoCollapseController {

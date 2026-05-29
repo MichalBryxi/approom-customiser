@@ -24,6 +24,10 @@ const CSS = `
   .sidebar-menu.collapsed .content .bottom-part {
     transform: translateY(0) !important;
   }
+
+  .sidebar-menu.collapsed .content {
+    padding-inline: 0px !important;
+  }
 `;
 
 export class SidebarNoCollapseController {

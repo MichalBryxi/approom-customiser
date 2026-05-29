@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.1] - 2026-05-29
+
+### Fixes
+- **Mietflotte-Etiketten**: label layout overhauled — circle now uses `@page` margin as the single source of truth for edge clearance (1.5 mm non-printable zone + 2.5 mm visual margin), so the circle no longer overflows; `aspect-ratio: 1` keeps it square without hardcoded dimensions; font scales down automatically to fit any size string inside the circle. Label page size updated to 60 × 35 mm. Content rotated 90° to print portrait on the landscape stock.
+- **Sidebar collapse**: also forces `padding-inline: 0` on `.sidebar-menu.collapsed .content`, preventing the ERP from applying a 14 px inline padding that shifted content even when the width override was already in effect.
+
 ## [0.17.0] - 2026-05-29
 
 ### New features

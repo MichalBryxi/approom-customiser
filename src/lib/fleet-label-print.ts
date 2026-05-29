@@ -1,15 +1,13 @@
 import type { RentalFleetRow } from './types';
 
-// Physical label stock: 60 × 35 mm.
-// @page margin of 4 mm covers the 1.5 mm non-printable zone + 2.5 mm visual breathing room.
+// Physical label stock: 60 × 35 mm (2.36″ × 1.38″).
+// @page margin of 4 mm covers the ~1.5 mm non-printable zone + visual breathing room.
 // Content area after margin: 52 × 27 mm.
-const LABEL_W    = '60mm';
-const LABEL_H    = '35mm';
+const LABEL_W     = '60mm';
+const LABEL_H     = '35mm';
 const PAGE_MARGIN = '4mm';
-
-// Content area dimensions (page size minus 2 × margin on each axis).
-const CONTENT_W = '52mm'; // 60 − 8
-const CONTENT_H = '27mm'; // 35 − 8
+const CONTENT_W   = '52mm'; // 60 − 2×4
+const CONTENT_H   = '27mm'; // 35 − 2×4
 
 const PRINT_CSS = `
   @page {
@@ -42,12 +40,10 @@ const PRINT_CSS = `
     break-after: avoid;
   }
 
-  /* Rotate 90° clockwise so content reads portrait-style.
-     Pre-rotation: 27 mm wide × 52 mm tall.
-     Post-rotation: visually 52 mm wide × 27 mm tall — fills the label exactly. */
+  /* Rotate 90° clockwise so content reads portrait-style. */
   .label-content {
-    width: ${CONTENT_H};   /* 27 mm — becomes visual height after rotation */
-    height: ${CONTENT_W};  /* 52 mm — becomes visual width after rotation */
+    width: ${CONTENT_H};   /* becomes the visual height after rotation */
+    height: ${CONTENT_W};  /* becomes the visual width after rotation */
     transform: rotate(90deg);
     display: flex;
     flex-direction: column;
@@ -117,7 +113,7 @@ function escapeHtml(text: string): string {
  * Only ever shrinks — never enlarges.
  */
 function scaleFontsToFitCircles(doc: Document) {
-  for (const circle of doc.querySelectorAll<HTMLElement>('.size-circle')) {
+  for (const circle of Array.from(doc.querySelectorAll<HTMLElement>('.size-circle'))) {
     const text = circle.querySelector<HTMLElement>('.size-text');
     if (!text) continue;
 

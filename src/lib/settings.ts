@@ -341,7 +341,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'rental-fleet',
     label: 'Mietflotte-Druckbutton',
     description:
-      'Fügt in der Mietflotte-Übersicht einen „Drucken"-Button hinzu. Beim Klick werden die sichtbaren Zeilen mit Rent-EAN, Barcode und Grösse zum Drucken aufbereitet.',
+      'Fügt in der Mietflotte-Übersicht einen „Drucken"-Button hinzu. Beim Klick öffnet sich eine druckfertige Seite mit einer Etikette pro Zeile — die letzten vier Stellen der Rent-EAN sowie die Grösse in einem Kreis. Druckereinstellungen: Seitenformat 60 × 35 mm (2.36″ × 1.38″), Rand 1.5 mm. Der PDF verwendet intern einen Seitenrand von 4 mm (1.5 mm Druckertoleranz + 2.5 mm optischer Abstand) — diese Werte sind im Code festgelegt und müssen nicht am Drucker eingestellt werden.',
   },
   {
     id: 'rentalPrintButton',

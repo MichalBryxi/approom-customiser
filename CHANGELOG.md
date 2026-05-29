@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.17.0] - 2026-05-29
+
+### New features
+- **Mietflotte print button**: new "Drucken" button on the Rental > Mietflotte > Mietobjekte page. Reads all visible rows from the table and opens a print-ready page — one 55 × 30 mm label per row — containing the Rent-EAN in large text, a Code128 barcode, and the Grösse in large text. The barcode is generated inline with no external dependencies. Appears under a new "Rental > Mietflotte" section in the settings page.
+
 ## [0.16.2] - 2026-05-28
 
 ### Fixes

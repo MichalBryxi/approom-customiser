@@ -3,6 +3,7 @@ import type { ContentFeatureDefinition } from './feature-runtime';
 import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
 import { RentalErfasstDurchFilterController } from './rental-erfasst-durch-filter-controller';
 import { RentalListSignatureHighlightController } from './rental-list-signature-highlight-controller';
+import { RentalFleetPrintController } from './rental-fleet-print-controller';
 import { RentalPrintFeature } from './rental-print-feature';
 import { RentalSignatureNameController } from './rental-signature-name-controller';
 import { RentalSignatureSaveButtonController } from './rental-signature-save-button-controller';
@@ -13,6 +14,7 @@ import { UnterschriftHighlightController } from './unterschrift-highlight-contro
 
 const sidebarNoCollapseController = new SidebarNoCollapseController();
 const rentalPrintFeature = new RentalPrintFeature();
+const rentalFleetPrintController = new RentalFleetPrintController();
 const storageOrderWarningController = new StorageOrderWarningController();
 const storageOrderLabelPrintController = new StorageOrderLabelPrintController();
 const customerRegistrationFieldsController = new CustomerRegistrationFieldsController();
@@ -42,6 +44,14 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     url: {}, // matches all pages
     anchor: 'body',
     mount: (wrapper) => mountHiddenFeature(wrapper, () => sidebarNoCollapseController.mount()),
+  },
+  {
+    id: 'rentalFleetPrintButton',
+    label: 'Mietflotte-Druckbutton',
+    url: { pathEquals: '/rental/rental-fleet/object_item' },
+    anchor: 'button[data-button-index="0"]',
+    append: 'before',
+    mount: (wrapper) => rentalFleetPrintController.mount(wrapper),
   },
   {
     id: 'rentalPrintButton',

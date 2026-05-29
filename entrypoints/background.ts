@@ -35,13 +35,13 @@ export default defineBackground({
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       void (async () => {
         const { isSavePrintJobMessage, savePrintJobFromBackground } = await import('../src/lib/print-job');
-        if (!isSavePrintJobMessage(message)) {
-          sendResponse(undefined);
+        if (isSavePrintJobMessage(message)) {
+          await savePrintJobFromBackground(message.payload);
+          sendResponse({ ok: true });
           return;
         }
 
-        await savePrintJobFromBackground(message.payload);
-        sendResponse({ ok: true });
+        sendResponse(undefined);
       })();
 
       return true;

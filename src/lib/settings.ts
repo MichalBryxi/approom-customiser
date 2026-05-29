@@ -56,6 +56,10 @@ export const FEATURE_SETTING_GROUPS = [
     breadcrumb: 'Rental > Vermietungen',
   },
   {
+    id: 'rental-fleet',
+    breadcrumb: 'Rental > Mietflotte',
+  },
+  {
     id: 'storage-order',
     breadcrumb: 'Lager > Lagerbestellung > Bleistift',
   },
@@ -235,6 +239,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   sidebarNoCollapse: false,
   rentalPrintButton: true,
   rentalPrintSkipMietobjektPattern: '.*Helm.*',
+  rentalFleetPrintButton: true,
   checkInQuantityWarning: true,
   printLabelsByCheckInQuantity: true,
   customerRegistrationFields: true,
@@ -330,6 +335,13 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: 'Seitenleiste nicht einklappen',
     description:
       'Hält die Seitenleiste immer offen — auch wenn der ERP-Schalter sie einzuklappen versucht.',
+  },
+  {
+    id: 'rentalFleetPrintButton',
+    groupId: 'rental-fleet',
+    label: 'Mietflotte-Druckbutton',
+    description:
+      'Fügt in der Mietflotte-Übersicht einen „Drucken"-Button hinzu. Beim Klick werden die sichtbaren Zeilen mit Rent-EAN, Barcode und Grösse zum Drucken aufbereitet.',
   },
   {
     id: 'rentalPrintButton',

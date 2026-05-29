@@ -1,6 +1,7 @@
 export type FeatureId =
   | 'sidebarNoCollapse'
   | 'rentalPrintButton'
+  | 'rentalFleetPrintButton'
   | 'checkInQuantityWarning'
   | 'printLabelsByCheckInQuantity'
   | 'customerRegistrationFields'
@@ -37,10 +38,25 @@ export type CustomerRegistrationLanguage = 'de' | 'en' | 'fr' | 'it';
 export type CustomerRegistrationFieldLabelSettingId =
   `customerRegistrationField.${CustomerRegistrationFieldId}.label.${CustomerRegistrationLanguage}`;
 
+export type RentalFleetRow = {
+  rentEan: string;
+  groesse: string;
+  mietart: string;
+  produkt: string;
+  mietobjekt: string;
+  artNr: string;
+  modell: string;
+  marke: string;
+  farbe: string;
+  rahmennummer: string;
+  jahrgang: string;
+};
+
 export type ExtensionSettings = {
   extensionEnabled: boolean;
   sidebarNoCollapse: boolean;
   rentalPrintButton: boolean;
+  rentalFleetPrintButton: boolean;
   rentalPrintSkipMietobjektPattern: string;
   checkInQuantityWarning: boolean;
   printLabelsByCheckInQuantity: boolean;

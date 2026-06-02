@@ -31,6 +31,11 @@
 ### Improvements
 - **Rental print button — rental period and time-of-day indicator**: the print table now shows Mietbeginn and Mietende from the overview list for each position — inline, in smaller text, next to the rental article name. Bookings starting before 12:00 get a **dashed** coloured top bar (morning); from 12:00 onwards a **solid** bar (afternoon/evening). This makes it easy to distinguish morning and afternoon groups at a glance on the printout.
 
+## [0.15.0] - 2026-06-02
+
+### New features
+- **Abwesenheitskalender — CSV-Export**: adds a "CSV exportieren" button next to "Feiertagsverwaltung" in the absence calendar header. Exports the currently displayed month as a semicolon-delimited CSV with UTF-8 BOM (Excel-compatible). Column headers are formatted as `DD.MM.YYYY`. Optional sub-setting "Nicht-Arbeitstage mit „-" markieren" fills grey (non-working) cells with `-` instead of leaving them blank.
+
 ## [0.14.0] - 2026-05-23
 
 ### New features

@@ -71,6 +71,10 @@ export const FEATURE_SETTING_GROUPS = [
     id: 'office-rechnungen',
     breadcrumb: 'Office > Rechnungen',
   },
+  {
+    id: 'personalplanung',
+    breadcrumb: 'Personalplanung > Abwesenheitskalender',
+  },
 ] as const;
 
 export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
@@ -253,6 +257,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rechnungenMitarbeiterPreisKundentypPattern: '.*Mitarbeiter.*',
   rentalErfasstDurchFilter: true,
   rentalErfasstDurchFilterPattern: '',
+  absenceCalendarExport: true,
+  absenceCalendarExportMarkActive: true,
   customerRegistrationDefaultLanguage: 'en',
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
@@ -430,6 +436,13 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: '"Erfasst durch" filtern',
     description:
       'Filtert das „Erfasst durch"-Dropdown so, dass nur bestimmte Mitarbeiter zur Auswahl stehen.',
+  },
+  {
+    id: 'absenceCalendarExport',
+    groupId: 'personalplanung',
+    label: 'Abwesenheitskalender als CSV exportieren',
+    description:
+      'Fügt im Abwesenheitskalender einen „CSV exportieren"-Button hinzu. Beim Klick wird der aktuell angezeigte Monat als CSV-Datei heruntergeladen.',
   },
 ];
 

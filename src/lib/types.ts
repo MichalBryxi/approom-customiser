@@ -11,7 +11,8 @@ export type FeatureId =
   | 'rentalSignatureNamePrefill'
   | 'rentalSignatureSaveButton'
   | 'rechnungenMitarbeiterPreis'
-  | 'rentalErfasstDurchFilter';
+  | 'rentalErfasstDurchFilter'
+  | 'absenceCalendarExport';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -71,6 +72,8 @@ export type ExtensionSettings = {
   rechnungenMitarbeiterPreisKundentypPattern: string;
   rentalErfasstDurchFilter: boolean;
   rentalErfasstDurchFilterPattern: string;
+  absenceCalendarExport: boolean;
+  absenceCalendarExportMarkActive: boolean;
   customerRegistrationDefaultLanguage: CustomerRegistrationLanguage;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &

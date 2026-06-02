@@ -248,6 +248,26 @@ const FEATURE_EXTRA_CONFIG: Partial<
     body.append(createNestedField('Regex-Muster (leer = alles anzeigen)', input));
   },
 
+  absenceCalendarExport(body, settings) {
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = 'absenceCalendarExportMarkActive';
+    input.checked = settings.absenceCalendarExportMarkActive ?? DEFAULT_SETTINGS.absenceCalendarExportMarkActive;
+    input.addEventListener('change', () => {
+      void updateSetting('absenceCalendarExportMarkActive', input.checked).then(reloadErpTabs);
+    });
+    const label = document.createElement('label');
+    label.className = 'options__field';
+    const text = document.createElement('span');
+    text.className = 'options__field-label';
+    text.textContent = 'Nicht-Arbeitstage mit „-" markieren';
+    label.append(input, text);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'options__nested-options';
+    wrapper.append(label);
+    body.append(wrapper);
+  },
+
   rechnungenMitarbeiterPreis(body, settings) {
     const percentInput = document.createElement('input');
     percentInput.className = 'options__matrix-text';

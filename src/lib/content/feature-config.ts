@@ -1,3 +1,4 @@
+import { AbsenceCalendarExportController } from './absence-calendar-export-controller';
 import { CustomerRegistrationFieldsController } from './customer-registration-fields-controller';
 import type { ContentFeatureDefinition } from './feature-runtime';
 import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
@@ -24,6 +25,7 @@ const rentalErfasstDurchFilterController = new RentalErfasstDurchFilterControlle
 const rentalListSignatureHighlightController = new RentalListSignatureHighlightController();
 const rentalSignatureNameController = new RentalSignatureNameController();
 const rentalSignatureSaveButtonController = new RentalSignatureSaveButtonController();
+const absenceCalendarExportController = new AbsenceCalendarExportController();
 
 const rentalTimelineButtonAnchor = '//button[contains(normalize-space(.), "Zeitachse")]';
 const currentOrderHeadingAnchor = '#panel_current_order_step2';
@@ -155,6 +157,14 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     append: 'before',
     mount: (wrapper) =>
       mountHiddenFeature(wrapper, () => customerRegistrationFieldsController.syncRentalButtons(true)),
+  },
+  {
+    id: 'absenceCalendarExport',
+    label: 'Abwesenheitskalender CSV-Export',
+    url: { pathEquals: '/start.php', searchIncludes: 'men_tool=cal_ferien' },
+    anchor: '#list_button_primary',
+    append: 'before',
+    mount: (wrapper) => absenceCalendarExportController.mount(wrapper),
   },
   {
     id: 'rechnungenMitarbeiterPreis',

@@ -74,6 +74,7 @@ export type ExtensionSettings = {
   rentalErfasstDurchFilterPattern: string;
   absenceCalendarExport: boolean;
   absenceCalendarExportMarkActive: boolean;
+  absenceCalendarExportMandantPattern: string;
   customerRegistrationDefaultLanguage: CustomerRegistrationLanguage;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &

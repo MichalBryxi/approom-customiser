@@ -266,6 +266,16 @@ const FEATURE_EXTRA_CONFIG: Partial<
     wrapper.className = 'options__nested-options';
     wrapper.append(label);
     body.append(wrapper);
+
+    const patternInput = document.createElement('input');
+    patternInput.className = 'options__matrix-text';
+    patternInput.type = 'text';
+    patternInput.name = 'absenceCalendarExportMandantPattern';
+    patternInput.value = settings.absenceCalendarExportMandantPattern ?? DEFAULT_SETTINGS.absenceCalendarExportMandantPattern;
+    patternInput.addEventListener('change', () => {
+      void updateSetting('absenceCalendarExportMandantPattern', patternInput.value).then(reloadErpTabs);
+    });
+    body.append(createNestedField('Mandant-Filter: Regex (leer = Schaltfläche ausblenden)', patternInput));
   },
 
   rechnungenMitarbeiterPreis(body, settings) {

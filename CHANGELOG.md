@@ -31,6 +31,15 @@
 ### Improvements
 - **Rental print button — rental period and time-of-day indicator**: the print table now shows Mietbeginn and Mietende from the overview list for each position — inline, in smaller text, next to the rental article name. Bookings starting before 12:00 get a **dashed** coloured top bar (morning); from 12:00 onwards a **solid** bar (afternoon/evening). This makes it easy to distinguish morning and afternoon groups at a glance on the printout.
 
+## [0.16.0] - 2026-06-03
+
+### New features
+- **Abwesenheitskalender — Alle Mandanten exportieren**: new "Alle Mandanten exportieren" button appears next to "CSV exportieren" when a mandant regex is configured. Iterates through all matching mandants (including the currently active one, which is not listed in the dropdown), harvests each month's data, and downloads a single combined CSV with a leading "Mandant" column. Progress is persisted in local storage so page reloads between mandant switches don't lose data.
+
+### Changes
+- **Abwesenheitskalender — CSV**: the "Wochentag" row is now included only once in combined exports, directly below the date header row.
+- **Abwesenheitskalender — CSV**: buttons are correctly restored after a multi-mandant export completes.
+
 ## [0.15.0] - 2026-06-02
 
 ### New features

@@ -259,6 +259,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalErfasstDurchFilterPattern: '',
   absenceCalendarExport: true,
   absenceCalendarExportMarkActive: true,
+  absenceCalendarExportMandantPattern: '.*',
   customerRegistrationDefaultLanguage: 'en',
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,

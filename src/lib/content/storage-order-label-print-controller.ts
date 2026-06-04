@@ -1,6 +1,8 @@
 import { normalizeText } from '../text';
 import { getColumnIndex, setInputValue } from './dom';
 
+const APPLY_BUTTON_ID = 'approom-apply-checkin-qty';
+
 type PrintQuantitySnapshot = Array<{
   artId: string;
   quantity: string;
@@ -8,78 +10,44 @@ type PrintQuantitySnapshot = Array<{
 
 function buildPrintQueue(snapshot: PrintQuantitySnapshot) {
   const queue = new Map<string, string[]>();
-
   for (const entry of snapshot) {
     const existing = queue.get(entry.artId) ?? [];
     existing.push(entry.quantity);
     queue.set(entry.artId, existing);
   }
-
   return queue;
 }
 
 export class StorageOrderLabelPrintController {
   private boundButton: HTMLButtonElement | null = null;
-
-  private applyInterval: number | null = null;
-
-  private applyDeadlineTimeout: number | null = null;
-
   private pendingSnapshot: PrintQuantitySnapshot | null = null;
+  private modalObserver: MutationObserver | null = null;
 
   sync(enabled: boolean) {
-    if (!enabled) {
-      return;
-    }
+    if (!enabled) return;
 
     const button = document.querySelector<HTMLButtonElement>('#etiketten_button');
-    if (!button) {
-      return;
-    }
+    if (!button) return;
 
     this.bindButtonListener(button);
   }
 
   private readonly handleButtonClick = () => {
     this.pendingSnapshot = this.capturePrintQuantitySnapshot();
-    this.scheduleModalApply();
+    this.waitForModalAndInjectButton();
   };
 
   private bindButtonListener(button: HTMLButtonElement) {
-    if (this.boundButton === button) {
-      return;
-    }
-
+    if (this.boundButton === button) return;
     this.detachButtonListener();
     this.boundButton = button;
     this.boundButton.addEventListener('click', this.handleButtonClick);
   }
 
   private detachButtonListener() {
-    if (!this.boundButton) {
-      return;
-    }
-
+    if (!this.boundButton) return;
     this.boundButton.removeEventListener('click', this.handleButtonClick);
     this.boundButton = null;
-  }
-
-  private clearPendingApply() {
-    if (this.applyInterval !== null) {
-      if (typeof window !== 'undefined') {
-        window.clearInterval(this.applyInterval);
-      }
-      this.applyInterval = null;
-    }
-
-    if (this.applyDeadlineTimeout !== null) {
-      if (typeof window !== 'undefined') {
-        window.clearTimeout(this.applyDeadlineTimeout);
-      }
-      this.applyDeadlineTimeout = null;
-    }
-
-    this.pendingSnapshot = null;
   }
 
   private getOrderTable() {
@@ -88,92 +56,129 @@ export class StorageOrderLabelPrintController {
 
   private capturePrintQuantitySnapshot(): PrintQuantitySnapshot {
     const table = this.getOrderTable();
-    if (!table) {
-      return [];
-    }
+    if (!table) return [];
 
     const pendingColumnIndex = getColumnIndex(table, 'Anzahl einbuchen');
 
     return Array.from(table.tBodies[0]?.rows ?? [])
       .filter((row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement)
       .map((row) => ({
-        artId: normalizeText(
-          row.querySelector<HTMLInputElement>('input[name="art_id[]"]')?.value,
-        ),
+        artId: normalizeText(row.querySelector<HTMLInputElement>('input[name="art_id[]"]')?.value),
         quantity:
           normalizeText(
-            row.cells
-              .item(pendingColumnIndex)
-              ?.querySelector<HTMLInputElement>('input')
-              ?.value,
+            row.cells.item(pendingColumnIndex)?.querySelector<HTMLInputElement>('input')?.value,
           ) || '0',
       }))
       .filter((entry) => entry.artId);
   }
 
-  private scheduleModalApply() {
-    if (!this.pendingSnapshot) {
-      return;
-    }
+  private waitForModalAndInjectButton() {
+    this.modalObserver?.disconnect();
+    this.modalObserver = null;
 
-    this.tryApplyPendingSnapshot();
+    const tryInject = () => {
+      const modal = document.querySelector<HTMLElement>('#myModal');
+      const printContent = modal?.querySelector<HTMLElement>('#print_content');
+      const headingDiv = printContent?.previousElementSibling as HTMLElement | null;
+      if (!headingDiv || !modal.querySelectorAll('.dd-item.row').length) return false;
+      if (headingDiv.querySelector(`#${APPLY_BUTTON_ID}`)) return true;
 
-    if (this.applyInterval !== null) {
-      window.clearInterval(this.applyInterval);
-    }
+      headingDiv.style.display = 'flex';
+      headingDiv.style.alignItems = 'center';
+      headingDiv.style.justifyContent = 'space-between';
 
-    this.applyInterval = window.setInterval(() => {
-      this.tryApplyPendingSnapshot();
-    }, 100);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = APPLY_BUTTON_ID;
+      btn.className = 'btn btn-default btn-xs';
+      btn.innerHTML = '<i class="fa fa-calculator"></i> Anzahl auf Einbuchmenge setzen';
+      btn.addEventListener('click', () => this.applySnapshot());
+      headingDiv.append(btn);
 
-    if (this.applyDeadlineTimeout !== null) {
-      window.clearTimeout(this.applyDeadlineTimeout);
-    }
+      this.annotateRows(modal);
+      this.refreshButtonState(btn);
+      return true;
+    };
 
-    this.applyDeadlineTimeout = window.setTimeout(() => {
-      this.clearPendingApply();
-    }, 2000);
+    if (tryInject()) return;
+
+    this.modalObserver = new MutationObserver(() => {
+      if (tryInject()) {
+        this.modalObserver?.disconnect();
+        this.modalObserver = null;
+      }
+    });
+    this.modalObserver.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => {
+      this.modalObserver?.disconnect();
+      this.modalObserver = null;
+    }, 5000);
   }
 
-  private tryApplyPendingSnapshot() {
-    if (!this.pendingSnapshot) {
-      return false;
-    }
+  private annotateRows(modal: HTMLElement) {
+    if (!this.pendingSnapshot) return;
+    const printQueue = buildPrintQueue(this.pendingSnapshot);
 
-    if (typeof document === 'undefined' || !document.body) {
-      this.clearPendingApply();
-      return false;
+    for (const row of modal.querySelectorAll<HTMLElement>('.dd-item.row')) {
+      const artId = normalizeText(row.querySelector<HTMLInputElement>('.print_art_id')?.value);
+      const printCountInput = row.querySelector<HTMLInputElement>('.print_count');
+      if (!artId || !printCountInput) continue;
+      if (printCountInput.nextElementSibling?.classList.contains('approom-target-qty')) continue;
+
+      const quantities = printQueue.get(artId);
+      if (!quantities?.length) continue;
+
+      const label = document.createElement('small');
+      label.className = 'approom-target-qty';
+      label.style.cssText = 'display:block; color:#888; margin-top:2px;';
+      label.textContent = `→ ${quantities[0]}`;
+      printCountInput.after(label);
     }
+  }
+
+  private refreshButtonState(btn: HTMLButtonElement) {
+    if (!this.pendingSnapshot) return;
 
     const modal = document.querySelector<HTMLElement>('#myModal');
     const printRows = Array.from(modal?.querySelectorAll<HTMLElement>('.dd-item.row') ?? []);
-    if (!modal || printRows.length === 0) {
-      return false;
-    }
+    const printQueue = buildPrintQueue(this.pendingSnapshot);
 
+    const alreadyMatches = printRows.every((row) => {
+      const artId = normalizeText(row.querySelector<HTMLInputElement>('.print_art_id')?.value);
+      const printCountInput = row.querySelector<HTMLInputElement>('.print_count');
+      if (!artId || !printCountInput) return true;
+
+      const quantities = printQueue.get(artId);
+      if (!quantities?.length) return true;
+
+      return normalizeText(printCountInput.value) === quantities[0];
+    });
+
+    btn.disabled = alreadyMatches;
+  }
+
+  private applySnapshot() {
+    if (!this.pendingSnapshot) return;
+
+    const modal = document.querySelector<HTMLElement>('#myModal');
+    const printRows = Array.from(modal?.querySelectorAll<HTMLElement>('.dd-item.row') ?? []);
     const printQueue = buildPrintQueue(this.pendingSnapshot);
 
     for (const row of printRows) {
-      const artId = normalizeText(
-        row.querySelector<HTMLInputElement>('.print_art_id')?.value,
-      );
+      const artId = normalizeText(row.querySelector<HTMLInputElement>('.print_art_id')?.value);
       const printCountInput = row.querySelector<HTMLInputElement>('.print_count');
-      if (!artId || !printCountInput) {
-        continue;
-      }
+      if (!artId || !printCountInput) continue;
 
       const quantities = printQueue.get(artId);
       const nextQuantity = quantities?.shift();
-      if (typeof nextQuantity === 'undefined') {
-        continue;
-      }
+      if (typeof nextQuantity === 'undefined') continue;
 
       setInputValue(printCountInput, nextQuantity);
-      if (quantities && quantities.length === 0) {
-        printQueue.delete(artId);
-      }
+      if (quantities?.length === 0) printQueue.delete(artId);
     }
 
-    return true;
+    const btn = document.getElementById(APPLY_BUTTON_ID) as HTMLButtonElement | null;
+    if (btn) this.refreshButtonState(btn);
+    this.pendingSnapshot = null;
   }
 }

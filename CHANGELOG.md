@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.19.0] - 2026-06-03
+
+### Changes
+- **Lagerbestellung — Etiketten drucken**: "Anzahl auf Einbuchmenge setzen" is now a manual button next to the "Drucken" heading (with calculator icon) instead of applying automatically when the modal opens. Each `print_count` input shows the target quantity from the check-in snapshot as a small `→ N` hint below it. The button is disabled when all values already match the snapshot.
+
 ## [0.17.1] - 2026-05-29
 
 ### Fixes

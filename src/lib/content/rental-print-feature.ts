@@ -442,7 +442,7 @@ export class RentalPrintFeature {
 
       const { start, end } = this.getRowDates(currentRow);
       const dateRange = this.formatDateRange(start, end);
-      const striped = this.isBeforeNoon(start);
+      const striped = !this.isBeforeNoon(start);
       await this.clickEditAction(currentRow);
       await this.waitForDetailPage(previousUrl);
       await this.expandDetailPositions();

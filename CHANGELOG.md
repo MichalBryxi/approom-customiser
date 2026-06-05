@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.20.0] - 2026-06-05
+
+### Changes
+- **Rental — Drucken**: morning bookings (before 12:00) now show a solid colour bar; afternoon bookings (12:00 and later) show a dashed bar.
+
 ## [0.19.0] - 2026-06-03
 
 ### Changes

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.21.0] - 2026-06-10
+
+### New features
+- **Fahrzeuglager — Etiketten drucken**: adds an "Etiketten drucken" button to the Fahrzeuglager toolbar. Clicking it opens a print-ready page with one sticker per visible bike — sized for 150 × 52 mm label stock. Each sticker shows the brand, model, frame size in large type, a scannable QR code with the frame number, and the frame number in bold text. The content is rotated 90° so the label reads naturally when stuck on a vertical frame tube. QR codes are generated entirely in the browser with no network requests.
+
 ## [0.20.0] - 2026-06-05
 
 ### Changes

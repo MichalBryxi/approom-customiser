@@ -37,6 +37,9 @@ Hides entries in the "Buchung erfasst durch" employee dropdown that do not match
 **Rechnungen — Mitarbeiterpreis**
 Adds an "EP+N%" button next to the unit price field on each invoice line. One click calculates the employee price (purchase price plus a configurable markup percentage) and fills it in. The button disables itself when the field already holds the correct value. The markup percentage is configurable in extension settings.
 
+**Fahrzeuglager — print bike stickers**
+Adds a "Etiketten drucken" button to the Fahrzeuglager toolbar. Clicking it opens a print-ready page with one sticker per visible bike, sized for 150 × 52 mm label stock. Each sticker shows the brand, model, frame size in large type, a scannable QR code with the frame number, and the frame number in bold. Content is rotated 90° so the label reads naturally on a vertical frame tube. QR codes are generated entirely in the browser — no network requests.
+
 ---
 
 All settings are stored locally in your browser and are not synced across devices. Each machine keeps its own configuration. No data is collected, transmitted, or shared.

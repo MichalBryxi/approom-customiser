@@ -1,4 +1,5 @@
 import { AbsenceCalendarExportController } from './absence-calendar-export-controller';
+import { FahrzeuglagerStickerPrintController } from './fahrzeuglager-sticker-print-controller';
 import { CustomerRegistrationFieldsController } from './customer-registration-fields-controller';
 import type { ContentFeatureDefinition } from './feature-runtime';
 import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
@@ -26,6 +27,7 @@ const rentalListSignatureHighlightController = new RentalListSignatureHighlightC
 const rentalSignatureNameController = new RentalSignatureNameController();
 const rentalSignatureSaveButtonController = new RentalSignatureSaveButtonController();
 const absenceCalendarExportController = new AbsenceCalendarExportController();
+const fahrzeuglagerStickerPrintController = new FahrzeuglagerStickerPrintController();
 
 const rentalTimelineButtonAnchor = '//button[contains(normalize-space(.), "Zeitachse")]';
 const currentOrderHeadingAnchor = '#panel_current_order_step2';
@@ -157,6 +159,14 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     append: 'before',
     mount: (wrapper) =>
       mountHiddenFeature(wrapper, () => customerRegistrationFieldsController.syncRentalButtons(true)),
+  },
+  {
+    id: 'fahrzeuglagerStickerPrint',
+    label: 'Fahrzeuglager Etiketten drucken',
+    url: { pathEquals: '/start.php', searchIncludes: 'men_tool=fahrzeuglager' },
+    anchor: '#list_button_primary',
+    append: 'before',
+    mount: (wrapper) => fahrzeuglagerStickerPrintController.mount(wrapper),
   },
   {
     id: 'absenceCalendarExport',

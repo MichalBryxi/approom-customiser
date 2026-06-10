@@ -12,7 +12,8 @@ export type FeatureId =
   | 'rentalSignatureSaveButton'
   | 'rechnungenMitarbeiterPreis'
   | 'rentalErfasstDurchFilter'
-  | 'absenceCalendarExport';
+  | 'absenceCalendarExport'
+  | 'fahrzeuglagerStickerPrint';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -75,6 +76,7 @@ export type ExtensionSettings = {
   absenceCalendarExport: boolean;
   absenceCalendarExportMarkActive: boolean;
   absenceCalendarExportMandantPattern: string;
+  fahrzeuglagerStickerPrint: boolean;
   customerRegistrationDefaultLanguage: CustomerRegistrationLanguage;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &

@@ -75,6 +75,10 @@ export const FEATURE_SETTING_GROUPS = [
     id: 'personalplanung',
     breadcrumb: 'Personalplanung > Abwesenheitskalender',
   },
+  {
+    id: 'lager-fahrzeug',
+    breadcrumb: 'Lager > Fahrzeuglager',
+  },
 ] as const;
 
 export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
@@ -260,6 +264,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   absenceCalendarExport: true,
   absenceCalendarExportMarkActive: true,
   absenceCalendarExportMandantPattern: '.*',
+  fahrzeuglagerStickerPrint: true,
   customerRegistrationDefaultLanguage: 'en',
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
@@ -437,6 +442,13 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: '"Erfasst durch" filtern',
     description:
       'Filtert das „Erfasst durch"-Dropdown so, dass nur bestimmte Mitarbeiter zur Auswahl stehen.',
+  },
+  {
+    id: 'fahrzeuglagerStickerPrint',
+    groupId: 'lager-fahrzeug',
+    label: 'Etiketten drucken',
+    description:
+      'Fügt im Fahrzeuglager einen „Etiketten drucken"-Button hinzu. Beim Klick öffnet sich eine druckfertige Seite mit einer Etikette pro sichtbarer Zeile — Marke, Modell, Rahmenhöhe (groß), QR-Code (Rahmennummer) und Rahmennummer. Druckereinstellungen: Seitenformat 100 × 35 mm (Querformat).',
   },
   {
     id: 'absenceCalendarExport',

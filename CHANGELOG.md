@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.22.0] - 2026-07-11
+
+### New features
+- **Customer registration — email address**: the field is now split into a local-part / `@` / domain layout (with `john.doe` / `example.com` placeholders) instead of one free-text input, so the `@` no longer needs to be typed manually. The combined address is validated against a basic email format on submit.
+- **Customer registration — phone numbers**: the leading `+` is now a fixed, non-editable prefix shown next to the field instead of a pre-filled character the visitor could accidentally delete.
+
+### Changes
+- **Customer registration**: removed the separate on-screen `@`/`+` keyboard button row — both characters are now fixed parts of the email/phone fields and no longer need to be typed.
+
+### Fixes
+- **Anmelden & Vermietung offen**: selecting the newly registered customer in the new rental's "Kunde" picker could silently fail for customers with a multi-word first or last name (e.g. "Jean Pierre" or "von Allmen"), because the ERP's search returned no results for the full concatenated name. The search now falls back through progressively narrower terms (lastname, firstname, individual words, postcode, city) and disambiguates multiple matches using name and address together.
+- **Anmelden & Vermietung offen**: the registration form could silently fail to submit if the extension's storage was temporarily unavailable (e.g. the extension was reloaded while the tab stayed open) — the form now always submits regardless.
+
 ## [0.21.0] - 2026-06-10
 
 ### New features

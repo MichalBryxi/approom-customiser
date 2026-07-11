@@ -27,6 +27,7 @@
     "website": "Veuillez saisir un site web.",
     "birthday": "Veuillez saisir une date de naissance."
   },
+  "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
   "extra_section": "Extra",
   "keyboard": "Clavier",
   "duration": {

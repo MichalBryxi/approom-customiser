@@ -27,6 +27,7 @@
     "website": "Inserisci un sito web.",
     "birthday": "Inserisci una data di nascita."
   },
+  "invalidEmail": "Inserisci un indirizzo e-mail valido.",
   "extra_section": "Extra",
   "keyboard": "Tastiera",
   "duration": {

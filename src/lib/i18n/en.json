@@ -27,6 +27,7 @@
     "website": "Please enter a website.",
     "birthday": "Please enter a birthday."
   },
+  "invalidEmail": "Please enter a valid email address.",
   "extra_section": "Extra",
   "keyboard": "Keyboard",
   "duration": {

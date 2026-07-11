@@ -394,7 +394,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'customer-registration',
     label: 'Registrierungsfelder',
     description:
-      'Erlaubt es, einzelne Felder des Registrierungsformulars als Pflichtfeld zu markieren, in den Extra-Bereich zu verschieben oder mit einer eigenen Beschriftung zu versehen.',
+      'Erlaubt es, einzelne Felder des Registrierungsformulars als Pflichtfeld zu markieren, in den Extra-Bereich zu verschieben oder mit einer eigenen Beschriftung zu versehen. E-Mail- und Telefonfelder werden zudem automatisch in Teilfelder mit fixem @- bzw. +-Zeichen aufgeteilt, inklusive Prüfung des E-Mail-Formats.',
   },
   {
     id: 'registrationToRental',

@@ -20,12 +20,16 @@ const EXTRA_SECTION_ATTRIBUTE = 'data-app-room-customer-registration-extra';
 const EXTRA_SECTION_CONTENT_ATTRIBUTE = 'data-app-room-customer-registration-extra-content';
 const REQUIRED_FEEDBACK_ATTRIBUTE = 'data-app-room-required-feedback';
 const REQUIRED_STAR_ATTRIBUTE = 'data-app-room-required-star';
-const CHAR_BAR_ATTRIBUTE = 'data-app-room-char-bar';
+const EMAIL_SPLIT_ATTRIBUTE = 'data-app-room-email-split';
+const PHONE_SPLIT_ATTRIBUTE = 'data-app-room-phone-split';
+const SPLIT_LABEL_BOUND_ATTRIBUTE = 'data-app-room-split-label-bound';
+const EMAIL_FORMAT_FEEDBACK_ATTRIBUTE = 'data-app-room-email-format-feedback';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NON_MANDATORY_FIELD_DEFAULTS = new Map<CustomerRegistrationFieldId, string>([
   ['zip', '3818'],
   ['city', 'Grindelwald'],
 ]);
-const PHONE_FIELD_PREFILL = '+';
+const PHONE_PREFIX = '+';
 const PHONE_FIELDS: CustomerRegistrationFieldId[] = ['mobile', 'phone_private', 'phone_work'];
 const FORM_OBSERVER_OPTIONS: MutationObserverInit = {
   childList: true,
@@ -112,6 +116,39 @@ function isRadioField(field: CustomerRegistrationFieldDefinition) {
   return getPrimaryInput(field)?.type === 'radio';
 }
 
+function splitEmail(value: string): [string, string] {
+  const atIndex = value.indexOf('@');
+  return atIndex === -1 ? [value, ''] : [value.slice(0, atIndex), value.slice(atIndex + 1)];
+}
+
+function isValidEmailFormat(value: string) {
+  return value === '' || EMAIL_PATTERN.test(value);
+}
+
+function createInputGroupAddon(text: string, wrapperClassName: 'input-group-prepend' | 'input-group-append') {
+  const wrapper = document.createElement('div');
+  wrapper.className = wrapperClassName;
+
+  const addon = document.createElement('span');
+  addon.className = 'input-group-text';
+  addon.textContent = text;
+
+  wrapper.append(addon);
+  return wrapper;
+}
+
+function bindSplitLabelFocus(label: HTMLLabelElement | null, target: HTMLInputElement) {
+  if (!label || label.hasAttribute(SPLIT_LABEL_BOUND_ATTRIBUTE)) {
+    return;
+  }
+
+  label.setAttribute(SPLIT_LABEL_BOUND_ATTRIBUTE, 'true');
+  label.addEventListener('click', (event) => {
+    event.preventDefault();
+    target.focus();
+  });
+}
+
 function getFieldValue(field: CustomerRegistrationFieldDefinition) {
   const inputs = getControlInputs(field);
   if (inputs[0]?.type === 'radio') {
@@ -128,7 +165,11 @@ export class CustomerRegistrationFieldsController {
 
   private form: HTMLFormElement | null = null;
 
-  private lastFocusedInput: HTMLInputElement | null = null;
+  private emailLocalInput: HTMLInputElement | null = null;
+
+  private emailDomainInput: HTMLInputElement | null = null;
+
+  private splitFocusTargets = new Map<CustomerRegistrationFieldId, HTMLInputElement>();
 
   private originalPositions = new Map<HTMLElement, OriginalPosition>();
 
@@ -251,7 +292,6 @@ export class CustomerRegistrationFieldsController {
     this.formObserver = null;
     if (this.form) {
       this.form.removeEventListener('submit', this.handleSubmit, true);
-      this.form.removeEventListener('focusin', this.handleFocusIn);
       this.form = null;
     }
     for (const input of this.observedRequiredInputs) {
@@ -260,6 +300,9 @@ export class CustomerRegistrationFieldsController {
     }
     this.observedRequiredInputs.clear();
     this.originalPositions.clear();
+    this.splitFocusTargets.clear();
+    this.emailLocalInput = null;
+    this.emailDomainInput = null;
   }
 
   private applyFieldCustomisations() {
@@ -276,8 +319,8 @@ export class CustomerRegistrationFieldsController {
       this.configureLabels();
       this.configureRequiredFields();
       this.applyNonMandatoryDefaults();
-      this.applyPhonePrefills();
-      this.ensureCharBar();
+      this.applyEmailSplit();
+      this.applyPhoneSplit();
       this.ensureRentalButtons();
     } finally {
       if (this.form) {
@@ -338,83 +381,102 @@ export class CustomerRegistrationFieldsController {
     });
   }
 
-  private ensureCharBar() {
-    if (!this.form || this.form.querySelector(`[${CHAR_BAR_ATTRIBUTE}]`)) {
+  private applyEmailSplit() {
+    const field = CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find((definition) => definition.id === 'mail');
+    const input = field && getPrimaryInput(field);
+    if (!input || input.hasAttribute(EMAIL_SPLIT_ATTRIBUTE)) {
       return;
     }
 
-    const bar = document.createElement('div');
-    bar.setAttribute(CHAR_BAR_ATTRIBUTE, 'true');
-    bar.className = 'd-flex mb-3';
-    bar.style.gap = '0.5rem';
+    input.setAttribute(EMAIL_SPLIT_ATTRIBUTE, 'true');
+    input.style.display = 'none';
+    input.tabIndex = -1;
+    input.setAttribute('aria-hidden', 'true');
 
-    for (const char of ['@', '+']) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-outline-secondary btn-lg';
-      btn.textContent = char;
-      btn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-      });
-      btn.addEventListener('click', () => {
-        this.insertChar(char);
-      });
-      bar.append(btn);
-    }
+    const wrapper = document.createElement('div');
+    wrapper.className = 'input-group';
 
-    const submitButton = this.form.querySelector<HTMLButtonElement>('button[type="submit"]');
-    const anchor = submitButton?.closest('.form-group') ?? submitButton;
-    if (anchor) {
-      anchor.before(bar);
-    } else {
-      this.form.append(bar);
-    }
+    const localInput = document.createElement('input');
+    localInput.type = 'text';
+    localInput.className = input.className;
+    localInput.placeholder = 'john.doe';
+    localInput.autocomplete = 'off';
 
-    this.form.addEventListener('focusin', this.handleFocusIn);
+    const atSign = createInputGroupAddon('@', 'input-group-append');
+
+    const domainInput = document.createElement('input');
+    domainInput.type = 'text';
+    domainInput.className = input.className;
+    domainInput.placeholder = 'example.com';
+    domainInput.autocomplete = 'off';
+
+    const [local, domain] = splitEmail(input.value);
+    localInput.value = local;
+    domainInput.value = domain;
+
+    const sync = () => {
+      const combined =
+        localInput.value === '' && domainInput.value === ''
+          ? ''
+          : `${localInput.value}@${domainInput.value}`;
+      setInputValue(input, combined);
+      this.validateEmailFormat(false);
+    };
+    localInput.addEventListener('input', sync);
+    domainInput.addEventListener('input', sync);
+
+    wrapper.append(localInput, atSign, domainInput);
+    input.after(wrapper);
+
+    this.emailLocalInput = localInput;
+    this.emailDomainInput = domainInput;
+    this.splitFocusTargets.set('mail', localInput);
+
+    bindSplitLabelFocus(getLabel(input), localInput);
   }
 
-  private insertChar(char: string) {
-    const input =
-      document.activeElement instanceof HTMLInputElement
-        ? document.activeElement
-        : this.lastFocusedInput;
-    if (!input) {
-      return;
-    }
-
-    const start = input.selectionStart ?? input.value.length;
-    const end = input.selectionEnd ?? input.value.length;
-    input.value = `${input.value.slice(0, start)}${char}${input.value.slice(end)}`;
-    input.selectionStart = start + char.length;
-    input.selectionEnd = start + char.length;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    input.focus();
-  }
-
-  private applyPhonePrefills() {
+  private applyPhoneSplit() {
     for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
       if (!PHONE_FIELDS.includes(field.id)) {
         continue;
       }
 
       const input = getPrimaryInput(field);
-      if (input && normalizeText(input.value) === '') {
-        setInputValue(input, PHONE_FIELD_PREFILL);
+      if (!input || input.hasAttribute(PHONE_SPLIT_ATTRIBUTE)) {
+        continue;
       }
+
+      input.setAttribute(PHONE_SPLIT_ATTRIBUTE, 'true');
+      input.style.display = 'none';
+      input.tabIndex = -1;
+      input.setAttribute('aria-hidden', 'true');
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'input-group';
+
+      const prefix = createInputGroupAddon(PHONE_PREFIX, 'input-group-prepend');
+
+      const visibleInput = document.createElement('input');
+      visibleInput.type = 'tel';
+      visibleInput.className = input.className;
+      visibleInput.autocomplete = 'off';
+      visibleInput.value = input.value.startsWith(PHONE_PREFIX)
+        ? input.value.slice(PHONE_PREFIX.length)
+        : input.value;
+
+      visibleInput.addEventListener('input', () => {
+        const combined = visibleInput.value === '' ? '' : `${PHONE_PREFIX}${visibleInput.value}`;
+        setInputValue(input, combined);
+      });
+
+      wrapper.append(prefix, visibleInput);
+      input.after(wrapper);
+
+      this.splitFocusTargets.set(field.id, visibleInput);
+
+      bindSplitLabelFocus(getLabel(input), visibleInput);
     }
   }
-
-  private readonly handleFocusIn = (event: FocusEvent) => {
-    const target = event.target;
-    if (
-      target instanceof HTMLInputElement &&
-      target.type !== 'radio' &&
-      target.type !== 'checkbox'
-    ) {
-      this.lastFocusedInput = target;
-    }
-  };
 
   private getLanguage() {
     return getLanguage();
@@ -617,6 +679,9 @@ export class CustomerRegistrationFieldsController {
       fieldInput.setCustomValidity(message);
       fieldInput.classList.add('is-invalid');
     });
+    this.getSplitVisibleInputs(field.id).forEach((visibleInput) =>
+      visibleInput.classList.add('is-invalid'),
+    );
 
     const group = getFieldGroup(field);
     if (!group || this.getRequiredFeedback(field.id)) {
@@ -638,8 +703,68 @@ export class CustomerRegistrationFieldsController {
       input.setCustomValidity('');
       input.classList.remove('is-invalid');
     }
+    this.getSplitVisibleInputs(fieldName).forEach((visibleInput) =>
+      visibleInput.classList.remove('is-invalid'),
+    );
 
     this.getRequiredFeedback(fieldName)?.remove();
+  }
+
+  private getSplitVisibleInputs(fieldId: CustomerRegistrationFieldId): HTMLInputElement[] {
+    if (fieldId === 'mail') {
+      return [this.emailLocalInput, this.emailDomainInput].filter(
+        (visibleInput): visibleInput is HTMLInputElement => visibleInput !== null,
+      );
+    }
+
+    const target = this.splitFocusTargets.get(fieldId);
+    return target ? [target] : [];
+  }
+
+  private getEmailFormatFeedback() {
+    return document.querySelector<HTMLElement>(`[${EMAIL_FORMAT_FEEDBACK_ATTRIBUTE}]`);
+  }
+
+  private showEmailFormatError(field: CustomerRegistrationFieldDefinition) {
+    const message = t(this.getLanguage()).invalidEmail;
+    this.emailLocalInput?.classList.add('is-invalid');
+    this.emailDomainInput?.classList.add('is-invalid');
+
+    const group = getFieldGroup(field);
+    if (!group || this.getEmailFormatFeedback()) {
+      return;
+    }
+
+    const feedback = document.createElement('div');
+    feedback.className = 'invalid-feedback d-block';
+    feedback.setAttribute(EMAIL_FORMAT_FEEDBACK_ATTRIBUTE, 'true');
+    feedback.textContent = message;
+    group.append(feedback);
+  }
+
+  private clearEmailFormatError() {
+    this.emailLocalInput?.classList.remove('is-invalid');
+    this.emailDomainInput?.classList.remove('is-invalid');
+    this.getEmailFormatFeedback()?.remove();
+  }
+
+  private validateEmailFormat(showErrorIfInvalid: boolean): boolean {
+    const field = CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find((definition) => definition.id === 'mail');
+    const input = field && getPrimaryInput(field);
+    if (!field || !input) {
+      return true;
+    }
+
+    if (isValidEmailFormat(input.value)) {
+      this.clearEmailFormatError();
+      return true;
+    }
+
+    if (showErrorIfInvalid) {
+      this.showEmailFormatError(field);
+    }
+
+    return false;
   }
 
   private readonly handleRequiredInput = (event: Event) => {
@@ -681,7 +806,11 @@ export class CustomerRegistrationFieldsController {
       }
 
       this.showRequiredError(field);
-      firstInvalidInput ??= getPrimaryInput(field);
+      firstInvalidInput ??= this.splitFocusTargets.get(field.id) ?? getPrimaryInput(field);
+    }
+
+    if (!this.validateEmailFormat(true)) {
+      firstInvalidInput ??= this.emailLocalInput;
     }
 
     if (!firstInvalidInput) {

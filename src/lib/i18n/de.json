@@ -27,6 +27,7 @@
     "website": "Bitte geben Sie eine Website ein.",
     "birthday": "Bitte geben Sie ein Geburtsdatum ein."
   },
+  "invalidEmail": "Bitte geben Sie eine gültige E-Mail Adresse ein.",
   "extra_section": "Extra",
   "keyboard": "Tastatur",
   "duration": {

@@ -113,6 +113,22 @@ body {
   font-size: 13px;
 }
 
+.options__button {
+  justify-self: start;
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.options__button:hover {
+  background: #1d4ed8;
+}
+
 .options__field-error {
   margin: 0;
   color: #8b1e3f;

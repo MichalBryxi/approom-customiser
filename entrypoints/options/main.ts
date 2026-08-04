@@ -357,6 +357,65 @@ const FEATURE_EXTRA_CONFIG: Partial<
 
     const serverError = createFieldError();
 
+    const permissionStatus = document.createElement('p');
+    permissionStatus.className = 'options__field-hint';
+
+    const grantButton = document.createElement('button');
+    grantButton.type = 'button';
+    grantButton.className = 'options__button';
+    grantButton.textContent = 'Berechtigung erteilen';
+
+    async function refreshPermissionStatus() {
+      const value = serverInput.value.trim();
+      if (!value) {
+        permissionStatus.textContent = '';
+        grantButton.hidden = true;
+        return;
+      }
+
+      let origin: string;
+      try {
+        const parsed = new URL(value);
+        origin = `${parsed.protocol}//${parsed.host}/*`;
+      } catch {
+        permissionStatus.textContent = '';
+        grantButton.hidden = true;
+        return;
+      }
+
+      const granted = await chrome.permissions.contains({ origins: [origin] });
+      permissionStatus.textContent = granted
+        ? '✓ Berechtigung erteilt.'
+        : 'Berechtigung noch nicht erteilt — ohne sie schlägt der Druck mit einem CORS-Fehler fehl.';
+      grantButton.hidden = granted;
+    }
+
+    grantButton.addEventListener('click', () => {
+      void (async () => {
+        serverError.hidden = true;
+        const value = serverInput.value.trim();
+        if (!value) {
+          return;
+        }
+
+        try {
+          new URL(value);
+        } catch {
+          serverError.textContent = 'Ungültige URL. Beispiel: http://192.168.1.12:631';
+          serverError.hidden = false;
+          return;
+        }
+
+        const granted = await requestCupsServerPermission(value);
+        if (!granted) {
+          serverError.textContent =
+            'Berechtigung wurde nicht erteilt — der automatische Druck funktioniert erst, wenn sie erteilt wird.';
+          serverError.hidden = false;
+        }
+        await refreshPermissionStatus();
+      })();
+    });
+
     serverInput.addEventListener('change', () => {
       void (async () => {
         serverError.hidden = true;
@@ -380,9 +439,12 @@ const FEATURE_EXTRA_CONFIG: Partial<
         }
 
         await updateSetting('cupsServerUrl', value);
+        await refreshPermissionStatus();
         await reloadErpTabs();
       })();
     });
+
+    void refreshPermissionStatus();
 
     body.append(
       createNestedField(
@@ -394,6 +456,8 @@ const FEATURE_EXTRA_CONFIG: Partial<
             PRINTER_MANAGEMENT_LINK,
             ' → „Drucker Verwaltung" anklicken und die URL aus der Adresszeile kopieren.',
           ]),
+          permissionStatus,
+          grantButton,
           serverError,
         ],
       ),

@@ -17,6 +17,10 @@ type CupsPrintJobDefinition = {
   // queue's own default media, which may be unset ("unknown").
   media?: string;
   extraKeywordAttributes?: Record<string, string>;
+  // Klebetiketten (Zebra label) output was blank/oversized in testing and the
+  // root cause is still under investigation — disable just this job without
+  // deleting its config. Kassenbon/Auftrag printing works and stays enabled.
+  disabled?: boolean;
 };
 
 export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
@@ -32,6 +36,7 @@ export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
     // (confirmed via the printer's .ppd) — pass it verbatim in case the
     // modern `media` keyword above isn't being translated by this driver.
     extraKeywordAttributes: { PageSize: 'Custom.50x30mm' },
+    disabled: true,
   },
   {
     printerNameSettingId: 'cupsPrintAuftragPrinterName',
@@ -149,7 +154,7 @@ function findMatchingCupsPrintJob(url: string): CupsPrintJobDefinition | null {
 
 export async function handleCupsPrintNavigation(url: string, tabId: number) {
   const job = findMatchingCupsPrintJob(url);
-  if (!job) {
+  if (!job || job.disabled) {
     return;
   }
 

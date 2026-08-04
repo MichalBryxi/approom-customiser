@@ -228,6 +228,10 @@ function createFieldError() {
   return error;
 }
 
+// Klebetiketten (Zebra label) output was blank/oversized in testing — hide
+// just this field without deleting it. Kassenbon/Auftrag printing works.
+const CUPS_PRINT_ETIKETTE_FIELD_ENABLED = false;
+
 const PRINTER_MANAGEMENT_LINK = { href: 'https://erp.app-room.ch/printer', label: 'erp.app-room.ch/printer' };
 
 async function requestCupsServerPermission(url: string): Promise<boolean> {
@@ -463,24 +467,26 @@ const FEATURE_EXTRA_CONFIG: Partial<
       ),
     );
 
-    const etiketteInput = document.createElement('input');
-    etiketteInput.className = 'options__matrix-text';
-    etiketteInput.type = 'text';
-    etiketteInput.name = 'cupsPrintEtikettePrinterName';
-    etiketteInput.placeholder = 'z. B. Zebra_GK420t';
-    etiketteInput.value = settings.cupsPrintEtikettePrinterName ?? DEFAULT_SETTINGS.cupsPrintEtikettePrinterName;
-    etiketteInput.addEventListener('change', () => {
-      void updateSetting('cupsPrintEtikettePrinterName', etiketteInput.value.trim()).then(reloadErpTabs);
-    });
-    body.append(
-      createNestedField('Etikettendrucker (Klebetiketten)', etiketteInput, [
-        createHint([
-          'CUPS-Druckername. Leer lassen = kein Direktdruck für diesen Dokumenttyp. Zu finden unter ',
-          PRINTER_MANAGEMENT_LINK,
-          ' unter „Etikettendrucker".',
+    if (CUPS_PRINT_ETIKETTE_FIELD_ENABLED) {
+      const etiketteInput = document.createElement('input');
+      etiketteInput.className = 'options__matrix-text';
+      etiketteInput.type = 'text';
+      etiketteInput.name = 'cupsPrintEtikettePrinterName';
+      etiketteInput.placeholder = 'z. B. Zebra_GK420t';
+      etiketteInput.value = settings.cupsPrintEtikettePrinterName ?? DEFAULT_SETTINGS.cupsPrintEtikettePrinterName;
+      etiketteInput.addEventListener('change', () => {
+        void updateSetting('cupsPrintEtikettePrinterName', etiketteInput.value.trim()).then(reloadErpTabs);
+      });
+      body.append(
+        createNestedField('Etikettendrucker (Klebetiketten)', etiketteInput, [
+          createHint([
+            'CUPS-Druckername. Leer lassen = kein Direktdruck für diesen Dokumenttyp. Zu finden unter ',
+            PRINTER_MANAGEMENT_LINK,
+            ' unter „Etikettendrucker".',
+          ]),
         ]),
-      ]),
-    );
+      );
+    }
 
     const auftragInput = document.createElement('input');
     auftragInput.className = 'options__matrix-text';

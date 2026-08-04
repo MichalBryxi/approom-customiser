@@ -348,10 +348,10 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   'customerRegistrationField.birthday.label.fr': '',
 };
 
-// CUPS direct-print is unreliable pending further investigation (label
-// scaling/blank output) — disabled for release without deleting the feature.
-// Flip to true to bring the settings entry back.
-const CUPS_PRINT_FEATURE_ENABLED = false;
+// CUPS direct-print (Kassenbon/Auftrag) is confirmed working. Klebetiketten
+// (Zebra label) printing is disabled separately — see CUPS_PRINT_JOBS in
+// cups-print-jobs.ts and the etikette field toggle in options/main.ts.
+const CUPS_PRINT_FEATURE_ENABLED = true;
 
 export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   {
@@ -477,7 +477,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
           groupId: 'cups-printing' as const,
           label: 'Direktdruck über lokalen CUPS-Server',
           description:
-            'Sendet Klebetiketten- und Kassenbon-/Auftrags-PDFs beim Öffnen zusätzlich per Direktdruck an einen lokalen CUPS-Server — ein direkter Zugriff auf den lokalen Druckserver neben der normalen App-Room-Anzeige, nicht als Ersatz dafür. Pro Dokumenttyp unten einen Druckernamen eintragen; bleibt das Feld leer, wird für diesen Dokumenttyp kein Direktdruck ausgelöst.',
+            'Sendet Kassenbon-/Auftrags-PDFs beim Öffnen zusätzlich per Direktdruck an einen lokalen CUPS-Server — ein direkter Zugriff auf den lokalen Druckserver neben der normalen App-Room-Anzeige, nicht als Ersatz dafür. Unten einen Druckernamen eintragen; bleibt das Feld leer, wird kein Direktdruck ausgelöst. (Klebetiketten-Direktdruck ist vorübergehend deaktiviert.)',
         },
       ]
     : []),

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.22.2] - 2026-08-04
+
+### Changes
+- Removed the `scripting` permission from the manifest — it was only used by the (currently disabled) CUPS direct-print status toast, so declaring it served no purpose in this release.
+
 ## [0.22.1] - 2026-08-04
 
 ### Changes

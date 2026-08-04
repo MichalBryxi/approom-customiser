@@ -468,9 +468,9 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   {
     id: 'cupsPrint',
     groupId: 'cups-printing',
-    label: 'Automatischer Druck über lokalen CUPS-Server',
+    label: 'Direktdruck über lokalen CUPS-Server',
     description:
-      'Druckt Klebetiketten- und Kassenbon-/Auftrags-PDFs beim Öffnen automatisch und ohne Rückfrage über einen lokalen CUPS-Server — zusätzlich zur normalen Anzeige im Browser. Pro Dokumenttyp unten einen Druckernamen eintragen; bleibt das Feld leer, wird für diesen Dokumenttyp nicht gedruckt.',
+      'Sendet Klebetiketten- und Kassenbon-/Auftrags-PDFs beim Öffnen zusätzlich per Direktdruck an einen lokalen CUPS-Server — ein direkter Zugriff auf den lokalen Druckserver neben der normalen App-Room-Anzeige, nicht als Ersatz dafür. Pro Dokumenttyp unten einen Druckernamen eintragen; bleibt das Feld leer, wird für diesen Dokumenttyp kein Direktdruck ausgelöst.',
   },
 ];
 

@@ -10,6 +10,12 @@ type CupsPrintJobDefinition = {
   hostEquals: string;
   pathEquals: string;
   queryContains: string;
+  // Klebetiketten PDFs are generated at a page size that doesn't match the
+  // Zebra label stock, so each page needs scaling down to fit the label.
+  scaleToFit?: boolean;
+  // PWG5101.1 custom-media keyword, e.g. "custom_50x30mm". Overrides the CUPS
+  // queue's own default media, which may be unset ("unknown").
+  media?: string;
 };
 
 export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
@@ -19,6 +25,8 @@ export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
     hostEquals: 'erp.app-room.ch',
     pathEquals: '/office/content/data/lager/export/pdf_klebetiketten.php',
     queryContains: 'special_price=1',
+    scaleToFit: true,
+    media: 'custom_50x30mm',
   },
   {
     printerNameSettingId: 'cupsPrintAuftragPrinterName',
@@ -171,7 +179,10 @@ export async function handleCupsPrintNavigation(url: string, tabId: number) {
 
     const printerUri = `ipp://${cupsBaseUrl.host}/printers/${printerName}`;
     const printerResourceUrl = new URL(`/printers/${printerName}`, cupsBaseUrl).toString();
-    const header = buildIppPrintJobHeader(printerUri, REQUESTING_USER_NAME, job.jobName);
+    const header = buildIppPrintJobHeader(printerUri, REQUESTING_USER_NAME, job.jobName, {
+      scaleToFit: job.scaleToFit,
+      media: job.media,
+    });
     const body = new Blob([header, documentBytes]);
 
     const ippResponse = await fetch(printerResourceUrl, {

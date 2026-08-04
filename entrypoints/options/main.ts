@@ -475,7 +475,7 @@ const FEATURE_EXTRA_CONFIG: Partial<
     body.append(
       createNestedField('Etikettendrucker (Klebetiketten)', etiketteInput, [
         createHint([
-          'CUPS-Druckername. Leer lassen = Funktion deaktiviert. Zu finden unter ',
+          'CUPS-Druckername. Leer lassen = kein Direktdruck für diesen Dokumenttyp. Zu finden unter ',
           PRINTER_MANAGEMENT_LINK,
           ' unter „Etikettendrucker".',
         ]),
@@ -494,7 +494,7 @@ const FEATURE_EXTRA_CONFIG: Partial<
     body.append(
       createNestedField('Kassenbon-/Auftragsdrucker', auftragInput, [
         createHint([
-          'CUPS-Druckername. Leer lassen = Funktion deaktiviert. Zu finden unter ',
+          'CUPS-Druckername. Leer lassen = kein Direktdruck für diesen Dokumenttyp. Zu finden unter ',
           PRINTER_MANAGEMENT_LINK,
           ' unter „Kassenbon Drucker".',
         ]),

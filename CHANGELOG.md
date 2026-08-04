@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.22.3] - 2026-08-04
+
+### New features
+- **Direktdruck über lokalen CUPS-Server**: Kassenbon-/Auftrags-PDFs can now be sent directly to a local CUPS network printer when opened, bypassing the normal browser print dialog — configurable in settings under "Drucken > CUPS-Netzwerkdrucker" (off by default). Klebetiketten (Zebra label) direct printing is not yet available — its output came out blank/oversized in testing and is disabled pending further investigation.
+
 ## [0.22.2] - 2026-08-04
 
 ### Changes

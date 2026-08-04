@@ -1,9 +1,18 @@
 import { defineBackground } from '#imports';
 import { storage } from 'wxt/utils/storage';
+import { CUPS_PRINT_JOBS, handleCupsPrintNavigation } from '../src/lib/cups-print-jobs';
 import { STORAGE_KEY } from '../src/lib/content/registration-to-rental-automation';
 
 const RESULT_URL_FILTER = {
   url: [{ pathEquals: '/customer_registration/result', hostEquals: 'erp.app-room.ch' }],
+} as const;
+
+const CUPS_PRINT_URL_FILTER = {
+  url: CUPS_PRINT_JOBS.map((job) => ({
+    hostEquals: job.hostEquals,
+    pathEquals: job.pathEquals,
+    queryContains: job.queryContains,
+  })),
 } as const;
 
 export default defineBackground({
@@ -24,6 +33,14 @@ export default defineBackground({
 
     chrome.webNavigation.onCompleted.addListener(handleResultPage, RESULT_URL_FILTER);
     chrome.webNavigation.onHistoryStateUpdated.addListener(handleResultPage, RESULT_URL_FILTER);
+
+    // Auto-print klebetiketten/auftrag PDFs to a local CUPS printer. The PDF still
+    // loads normally in the tab via Chrome's built-in viewer; this fires a second,
+    // independent fetch + IPP submission in the background. See CUPS_PRINT_JOBS.
+    chrome.webNavigation.onCompleted.addListener(
+      (details) => void handleCupsPrintNavigation(details.url, details.tabId),
+      CUPS_PRINT_URL_FILTER,
+    );
 
     const setSessionAccessLevel = () =>
       chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });

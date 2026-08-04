@@ -184,7 +184,11 @@ function createCustomerRegistrationMatrix(settings: ExtensionSettings) {
   return wrapper;
 }
 
-function createNestedField(labelText: string, input: HTMLInputElement | HTMLSelectElement) {
+function createNestedField(
+  labelText: string,
+  input: HTMLInputElement | HTMLSelectElement,
+  extraNodes: Node[] = [],
+) {
   const wrapper = document.createElement('div');
   wrapper.className = 'options__nested-options';
   const label = document.createElement('label');
@@ -192,9 +196,49 @@ function createNestedField(labelText: string, input: HTMLInputElement | HTMLSele
   const text = document.createElement('span');
   text.className = 'options__field-label';
   text.textContent = labelText;
-  label.append(text, input);
+  label.append(text, input, ...extraNodes);
   wrapper.append(label);
   return wrapper;
+}
+
+type HintPart = string | { href: string; label: string };
+
+function createHint(parts: HintPart[]) {
+  const hint = document.createElement('p');
+  hint.className = 'options__field-hint';
+  for (const part of parts) {
+    if (typeof part === 'string') {
+      hint.append(document.createTextNode(part));
+      continue;
+    }
+    const link = document.createElement('a');
+    link.href = part.href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = part.label;
+    hint.append(link);
+  }
+  return hint;
+}
+
+function createFieldError() {
+  const error = document.createElement('p');
+  error.className = 'options__field-error';
+  error.hidden = true;
+  return error;
+}
+
+const PRINTER_MANAGEMENT_LINK = { href: 'https://erp.app-room.ch/printer', label: 'erp.app-room.ch/printer' };
+
+async function requestCupsServerPermission(url: string): Promise<boolean> {
+  const parsed = new URL(url);
+  const origin = `${parsed.protocol}//${parsed.host}/*`;
+  try {
+    return await chrome.permissions.request({ origins: [origin] });
+  } catch (error) {
+    console.error('🦊 CUPS permission request failed.', error);
+    return false;
+  }
 }
 
 const FEATURE_EXTRA_CONFIG: Partial<
@@ -301,6 +345,97 @@ const FEATURE_EXTRA_CONFIG: Partial<
       void updateSetting('rechnungenMitarbeiterPreisKundentypPattern', patternInput.value).then(reloadErpTabs);
     });
     body.append(createNestedField('Nur anzeigen wenn Kundentyp passt (Regex, leer = immer)', patternInput));
+  },
+
+  cupsPrint(body, settings) {
+    const serverInput = document.createElement('input');
+    serverInput.className = 'options__matrix-text';
+    serverInput.type = 'text';
+    serverInput.name = 'cupsServerUrl';
+    serverInput.placeholder = 'http://192.168.1.12:631';
+    serverInput.value = settings.cupsServerUrl ?? DEFAULT_SETTINGS.cupsServerUrl;
+
+    const serverError = createFieldError();
+
+    serverInput.addEventListener('change', () => {
+      void (async () => {
+        serverError.hidden = true;
+        const value = serverInput.value.trim();
+
+        if (value) {
+          try {
+            new URL(value);
+          } catch {
+            serverError.textContent = 'Ungültige URL. Beispiel: http://192.168.1.12:631';
+            serverError.hidden = false;
+            return;
+          }
+
+          const granted = await requestCupsServerPermission(value);
+          if (!granted) {
+            serverError.textContent =
+              'Berechtigung wurde nicht erteilt — der automatische Druck funktioniert erst, wenn sie erteilt wird.';
+            serverError.hidden = false;
+          }
+        }
+
+        await updateSetting('cupsServerUrl', value);
+        await reloadErpTabs();
+      })();
+    });
+
+    body.append(
+      createNestedField(
+        'CUPS-Server-Adresse',
+        serverInput,
+        [
+          createHint([
+            'Schema, Host und Port des lokalen CUPS-Servers. Zu finden unter ',
+            PRINTER_MANAGEMENT_LINK,
+            ' → „Drucker Verwaltung" anklicken und die URL aus der Adresszeile kopieren.',
+          ]),
+          serverError,
+        ],
+      ),
+    );
+
+    const etiketteInput = document.createElement('input');
+    etiketteInput.className = 'options__matrix-text';
+    etiketteInput.type = 'text';
+    etiketteInput.name = 'cupsPrintEtikettePrinterName';
+    etiketteInput.placeholder = 'z. B. Zebra_GK420t';
+    etiketteInput.value = settings.cupsPrintEtikettePrinterName ?? DEFAULT_SETTINGS.cupsPrintEtikettePrinterName;
+    etiketteInput.addEventListener('change', () => {
+      void updateSetting('cupsPrintEtikettePrinterName', etiketteInput.value.trim()).then(reloadErpTabs);
+    });
+    body.append(
+      createNestedField('Etikettendrucker (Klebetiketten)', etiketteInput, [
+        createHint([
+          'CUPS-Druckername. Leer lassen = Funktion deaktiviert. Zu finden unter ',
+          PRINTER_MANAGEMENT_LINK,
+          ' unter „Etikettendrucker".',
+        ]),
+      ]),
+    );
+
+    const auftragInput = document.createElement('input');
+    auftragInput.className = 'options__matrix-text';
+    auftragInput.type = 'text';
+    auftragInput.name = 'cupsPrintAuftragPrinterName';
+    auftragInput.placeholder = 'z. B. pr-1039';
+    auftragInput.value = settings.cupsPrintAuftragPrinterName ?? DEFAULT_SETTINGS.cupsPrintAuftragPrinterName;
+    auftragInput.addEventListener('change', () => {
+      void updateSetting('cupsPrintAuftragPrinterName', auftragInput.value.trim()).then(reloadErpTabs);
+    });
+    body.append(
+      createNestedField('Kassenbon-/Auftragsdrucker', auftragInput, [
+        createHint([
+          'CUPS-Druckername. Leer lassen = Funktion deaktiviert. Zu finden unter ',
+          PRINTER_MANAGEMENT_LINK,
+          ' unter „Kassenbon Drucker".',
+        ]),
+      ]),
+    );
   },
 };
 

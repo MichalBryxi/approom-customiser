@@ -79,6 +79,10 @@ export const FEATURE_SETTING_GROUPS = [
     id: 'lager-fahrzeug',
     breadcrumb: 'Lager > Fahrzeuglager',
   },
+  {
+    id: 'cups-printing',
+    breadcrumb: 'Drucken > CUPS-Netzwerkdrucker',
+  },
 ] as const;
 
 export type FeatureSettingGroupId = (typeof FEATURE_SETTING_GROUPS)[number]['id'];
@@ -265,6 +269,10 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   absenceCalendarExportMarkActive: true,
   absenceCalendarExportMandantPattern: '.*',
   fahrzeuglagerStickerPrint: true,
+  cupsPrint: false,
+  cupsServerUrl: 'http://192.168.1.12:631',
+  cupsPrintEtikettePrinterName: 'Zebra_GK420t',
+  cupsPrintAuftragPrinterName: 'pr-1039',
   customerRegistrationDefaultLanguage: 'en',
   'customerRegistrationField.salutation.moveToExtra': true,
   'customerRegistrationField.firstname.moveToExtra': false,
@@ -456,6 +464,13 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: 'Abwesenheitskalender als CSV exportieren',
     description:
       'Fügt im Abwesenheitskalender einen „CSV exportieren"-Button hinzu. Beim Klick wird der aktuell angezeigte Monat als CSV-Datei heruntergeladen.',
+  },
+  {
+    id: 'cupsPrint',
+    groupId: 'cups-printing',
+    label: 'Automatischer Druck über lokalen CUPS-Server',
+    description:
+      'Druckt Klebetiketten- und Kassenbon-/Auftrags-PDFs beim Öffnen automatisch und ohne Rückfrage über einen lokalen CUPS-Server — zusätzlich zur normalen Anzeige im Browser. Pro Dokumenttyp unten einen Druckernamen eintragen; bleibt das Feld leer, wird für diesen Dokumenttyp nicht gedruckt.',
   },
 ];
 

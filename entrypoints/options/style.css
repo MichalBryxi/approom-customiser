@@ -107,6 +107,18 @@ body {
   font-weight: 600;
 }
 
+.options__field-hint {
+  margin: 0;
+  color: #52606d;
+  font-size: 13px;
+}
+
+.options__field-error {
+  margin: 0;
+  color: #8b1e3f;
+  font-size: 13px;
+}
+
 .options__matrix-scroll {
   max-width: 100%;
   overflow-x: auto;

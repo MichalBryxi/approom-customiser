@@ -13,7 +13,8 @@ export type FeatureId =
   | 'rechnungenMitarbeiterPreis'
   | 'rentalErfasstDurchFilter'
   | 'absenceCalendarExport'
-  | 'fahrzeuglagerStickerPrint';
+  | 'fahrzeuglagerStickerPrint'
+  | 'cupsPrint';
 
 export type CustomerRegistrationFieldId =
   | 'salutation'
@@ -77,6 +78,10 @@ export type ExtensionSettings = {
   absenceCalendarExportMarkActive: boolean;
   absenceCalendarExportMandantPattern: string;
   fahrzeuglagerStickerPrint: boolean;
+  cupsPrint: boolean;
+  cupsServerUrl: string;
+  cupsPrintEtikettePrinterName: string;
+  cupsPrintAuftragPrinterName: string;
   customerRegistrationDefaultLanguage: CustomerRegistrationLanguage;
 } & Record<CustomerRegistrationFieldMoveSettingId, boolean> &
   Record<CustomerRegistrationFieldMandatorySettingId, boolean> &

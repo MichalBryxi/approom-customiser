@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.22.1] - 2026-08-04
+
+### Changes
+- Added groundwork for direct PDF printing (Klebetiketten/Kassenbon) to a local CUPS network printer, bypassing the normal browser print dialog. Currently disabled by default and not shown in settings — the CUPS queue printed blank labels in testing and the root cause is still being investigated — so this release has no user-facing change from it yet.
+
 ## [0.22.0] - 2026-07-11
 
 ### New features

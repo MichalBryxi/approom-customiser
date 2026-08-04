@@ -348,6 +348,11 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   'customerRegistrationField.birthday.label.fr': '',
 };
 
+// CUPS direct-print is unreliable pending further investigation (label
+// scaling/blank output) — disabled for release without deleting the feature.
+// Flip to true to bring the settings entry back.
+const CUPS_PRINT_FEATURE_ENABLED = false;
+
 export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   {
     id: 'sidebarNoCollapse',
@@ -465,13 +470,17 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     description:
       'Fügt im Abwesenheitskalender einen „CSV exportieren"-Button hinzu. Beim Klick wird der aktuell angezeigte Monat als CSV-Datei heruntergeladen.',
   },
-  {
-    id: 'cupsPrint',
-    groupId: 'cups-printing',
-    label: 'Direktdruck über lokalen CUPS-Server',
-    description:
-      'Sendet Klebetiketten- und Kassenbon-/Auftrags-PDFs beim Öffnen zusätzlich per Direktdruck an einen lokalen CUPS-Server — ein direkter Zugriff auf den lokalen Druckserver neben der normalen App-Room-Anzeige, nicht als Ersatz dafür. Pro Dokumenttyp unten einen Druckernamen eintragen; bleibt das Feld leer, wird für diesen Dokumenttyp kein Direktdruck ausgelöst.',
-  },
+  ...(CUPS_PRINT_FEATURE_ENABLED
+    ? [
+        {
+          id: 'cupsPrint' as const,
+          groupId: 'cups-printing' as const,
+          label: 'Direktdruck über lokalen CUPS-Server',
+          description:
+            'Sendet Klebetiketten- und Kassenbon-/Auftrags-PDFs beim Öffnen zusätzlich per Direktdruck an einen lokalen CUPS-Server — ein direkter Zugriff auf den lokalen Druckserver neben der normalen App-Room-Anzeige, nicht als Ersatz dafür. Pro Dokumenttyp unten einen Druckernamen eintragen; bleibt das Feld leer, wird für diesen Dokumenttyp kein Direktdruck ausgelöst.',
+        },
+      ]
+    : []),
 ];
 
 const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as ExtensionSettingId[];

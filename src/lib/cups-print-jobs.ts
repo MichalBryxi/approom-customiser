@@ -16,6 +16,7 @@ type CupsPrintJobDefinition = {
   // PWG5101.1 custom-media keyword, e.g. "custom_50x30mm". Overrides the CUPS
   // queue's own default media, which may be unset ("unknown").
   media?: string;
+  extraKeywordAttributes?: Record<string, string>;
 };
 
 export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
@@ -27,6 +28,10 @@ export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
     queryContains: 'special_price=1',
     scaleToFit: true,
     media: 'custom_50x30mm',
+    // The PPD's own PageSize option uses CUPS' legacy "Custom.WxHmm" naming
+    // (confirmed via the printer's .ppd) — pass it verbatim in case the
+    // modern `media` keyword above isn't being translated by this driver.
+    extraKeywordAttributes: { PageSize: 'Custom.50x30mm' },
   },
   {
     printerNameSettingId: 'cupsPrintAuftragPrinterName',
@@ -176,12 +181,14 @@ export async function handleCupsPrintNavigation(url: string, tabId: number) {
       void showCupsPrintToast(tabId, message, 'error');
       return;
     }
+    console.log(`[approom-customiser] CUPS print: fetched ${documentBytes.byteLength} bytes for ${job.jobName} (${url})`);
 
     const printerUri = `ipp://${cupsBaseUrl.host}/printers/${printerName}`;
     const printerResourceUrl = new URL(`/printers/${printerName}`, cupsBaseUrl).toString();
     const header = buildIppPrintJobHeader(printerUri, REQUESTING_USER_NAME, job.jobName, {
       scaleToFit: job.scaleToFit,
       media: job.media,
+      extraKeywordAttributes: job.extraKeywordAttributes,
     });
     const body = new Blob([header, documentBytes]);
 

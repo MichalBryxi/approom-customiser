@@ -75,6 +75,13 @@ export type IppPrintJobOptions = {
    * always knows the actual label dimensions.
    */
   media?: string;
+  /**
+   * Extra job attributes passed verbatim as IPP keyword attributes. Used for
+   * legacy PPD-native option names (e.g. PageSize="Custom.50x30mm") that
+   * some CUPS/PPD combinations expect alongside — or instead of — the
+   * standard `media` keyword.
+   */
+  extraKeywordAttributes?: Record<string, string>;
 };
 
 /**
@@ -119,6 +126,9 @@ export function buildIppPrintJobHeader(
   }
   if (options.media) {
     jobAttributeChunks.push(encodeAttribute(IPP_TAG.keyword, 'media', options.media));
+  }
+  for (const [name, value] of Object.entries(options.extraKeywordAttributes ?? {})) {
+    jobAttributeChunks.push(encodeAttribute(IPP_TAG.keyword, name, value));
   }
 
   const parts = [header, operationAttributes];

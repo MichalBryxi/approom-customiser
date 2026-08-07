@@ -38,7 +38,7 @@ export default defineBackground({
     // loads normally in the tab via Chrome's built-in viewer; this fires a second,
     // independent fetch + IPP submission in the background. See CUPS_PRINT_JOBS.
     chrome.webNavigation.onCompleted.addListener(
-      (details) => void handleCupsPrintNavigation(details.url, details.tabId),
+      (details) => void handleCupsPrintNavigation(details.url),
       CUPS_PRINT_URL_FILTER,
     );
 

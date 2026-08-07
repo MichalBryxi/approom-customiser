@@ -105,35 +105,6 @@ async function fetchPdfDocument(url: string): Promise<ArrayBuffer | null> {
   return iframeBytes;
 }
 
-async function showCupsPrintToast(tabId: number, message: string, variant: 'success' | 'error') {
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      func: (toastMessage: string, toastVariant: string) => {
-        const toast = document.createElement('div');
-        toast.textContent = toastMessage;
-        toast.style.cssText = [
-          'position: fixed',
-          'bottom: 20px',
-          'right: 20px',
-          'z-index: 2147483647',
-          'padding: 12px 16px',
-          'border-radius: 8px',
-          'font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-          'color: #ffffff',
-          `background: ${toastVariant === 'success' ? '#1a7f37' : '#b91c1c'}`,
-          'box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25)',
-        ].join(';');
-        document.body.append(toast);
-        setTimeout(() => toast.remove(), 5000);
-      },
-      args: [message, variant],
-    });
-  } catch (error) {
-    console.error('[approom-customiser] CUPS print: failed to show status toast', error);
-  }
-}
-
 function findMatchingCupsPrintJob(url: string): CupsPrintJobDefinition | null {
   let parsed: URL;
   try {
@@ -152,7 +123,7 @@ function findMatchingCupsPrintJob(url: string): CupsPrintJobDefinition | null {
   );
 }
 
-export async function handleCupsPrintNavigation(url: string, tabId: number) {
+export async function handleCupsPrintNavigation(url: string) {
   const job = findMatchingCupsPrintJob(url);
   if (!job || job.disabled) {
     return;
@@ -172,18 +143,16 @@ export async function handleCupsPrintNavigation(url: string, tabId: number) {
   try {
     cupsBaseUrl = new URL(settings.cupsServerUrl);
   } catch {
-    const message = `CUPS-Server-Adresse ist ungültig oder fehlt ("${settings.cupsServerUrl}")`;
-    console.error(`[approom-customiser] CUPS print: ${message} — configure it in the extension settings.`);
-    void showCupsPrintToast(tabId, `${job.jobName}: ${message}`, 'error');
+    console.error(
+      `[approom-customiser] CUPS print: invalid or missing CUPS server URL ("${settings.cupsServerUrl}") — configure it in the extension settings.`,
+    );
     return;
   }
 
   try {
     const documentBytes = await fetchPdfDocument(url);
     if (!documentBytes) {
-      const message = `${job.jobName}: PDF konnte nicht geladen werden`;
-      console.error(`[approom-customiser] CUPS print: ${message} (${url})`);
-      void showCupsPrintToast(tabId, message, 'error');
+      console.error(`[approom-customiser] CUPS print: ${job.jobName}: PDF konnte nicht geladen werden (${url})`);
       return;
     }
     console.log(`[approom-customiser] CUPS print: fetched ${documentBytes.byteLength} bytes for ${job.jobName} (${url})`);
@@ -204,24 +173,18 @@ export async function handleCupsPrintNavigation(url: string, tabId: number) {
     });
 
     if (!ippResponse.ok) {
-      const message = `${job.jobName}: HTTP ${ippResponse.status} von CUPS (${printerName})`;
-      console.error(`[approom-customiser] CUPS print: ${message}`);
-      void showCupsPrintToast(tabId, message, 'error');
+      console.error(`[approom-customiser] CUPS print: ${job.jobName}: HTTP ${ippResponse.status} von CUPS (${printerName})`);
       return;
     }
 
     const statusCode = parseIppStatusCode(await ippResponse.arrayBuffer());
     if (!isSuccessfulIppStatus(statusCode)) {
-      const message = `${job.jobName}: IPP-Fehler 0x${(statusCode ?? 0).toString(16)} von ${printerName}`;
-      console.error(`[approom-customiser] CUPS print: ${message}`);
-      void showCupsPrintToast(tabId, message, 'error');
+      console.error(
+        `[approom-customiser] CUPS print: ${job.jobName}: IPP-Fehler 0x${(statusCode ?? 0).toString(16)} von ${printerName}`,
+      );
       return;
     }
-
-    void showCupsPrintToast(tabId, `${job.jobName}: an ${printerName} gesendet`, 'success');
   } catch (error) {
-    const message = `${job.jobName}: Druck an ${printerName} fehlgeschlagen`;
-    console.error(`[approom-customiser] CUPS print: ${message}`, error);
-    void showCupsPrintToast(tabId, message, 'error');
+    console.error(`[approom-customiser] CUPS print: ${job.jobName}: Druck an ${printerName} fehlgeschlagen`, error);
   }
 }

@@ -33,7 +33,7 @@ export default defineConfig({
     name: 'AppRoom Customiser',
     description: 'Customises the App-Room ERP interface with configurable workflow helpers.',
     homepage_url: 'https://github.com/MichalBryxi/approom-customiser',
-    permissions: ['storage', 'webNavigation', 'scripting'],
+    permissions: ['storage', 'webNavigation'],
     host_permissions: ['https://erp.app-room.ch/*'],
     // The CUPS server address is user-configured per device (options page), so its
     // origin is requested at runtime via chrome.permissions.request() rather than

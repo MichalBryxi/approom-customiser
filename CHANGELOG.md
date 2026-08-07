@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.22.4] - 2026-08-07
+
+### Changes
+- Removed the on-screen status toast that appeared in the ERP tab after a CUPS direct print. Print failures are now only reported in the extension's background console.
+- Removed the `scripting` permission from the manifest again — the status toast was its only consumer.
+
 ## [0.22.3] - 2026-08-04
 
 ### New features

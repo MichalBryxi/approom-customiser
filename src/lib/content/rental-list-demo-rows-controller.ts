@@ -6,6 +6,9 @@ import { normalizeText } from '../text';
 const DEMO_ROW_ATTRIBUTE = 'data-app-room-demo-row';
 const BODY_ROW_SELECTOR = 'tr[data-pc-section="bodyrow"]';
 const END_COLUMN_HEADER = 'Mietende';
+// The expectation text goes into the remark column; the cloned template row would
+// otherwise show the real rental's remark there.
+const REMARK_COLUMN_HEADER = 'Bemerkung';
 
 const MINUTE = 60 * 1000;
 // Every demo row is a rented one — that is the only status the colouring reacts to.
@@ -31,7 +34,7 @@ const DEMO_ROWS: DemoRow[] = [
     label: 'DEMO 1',
     endsInMinutes: 120,
     openAmount: '0.00',
-    expectation: 'keine Markierung',
+    expectation: 'Keine Markierung.',
   },
   {
     label: 'DEMO 2',
@@ -55,19 +58,19 @@ const DEMO_ROWS: DemoRow[] = [
     label: 'DEMO 5',
     endsInMinutes: 120,
     openAmount: '45.00',
-    expectation: 'nur „Offener Betrag" rot',
+    expectation: 'Nur „Offener Betrag" rot.',
   },
   {
     label: 'DEMO 6',
     endsInMinutes: -61,
     openAmount: '120.00',
-    expectation: 'Mietende rot + Badge, „Offener Betrag" rot',
+    expectation: 'Mietende rot + Badge, „Offener Betrag" rot.',
   },
   {
     label: 'DEMO 7',
     endsInMinutes: -29.5,
     openAmount: '0.00',
-    expectation: 'gelb, wechselt nach ~30 Sek. auf orange (Badge zählt mit)',
+    expectation: 'Gelb, wechselt nach ~30 Sek. auf orange (Badge zählt mit).',
   },
 ];
 
@@ -109,20 +112,47 @@ function setCellText(row: HTMLTableRowElement, cellClass: string, text: string) 
   cell.append(span);
 }
 
+/**
+ * The remark column has no stable `column-*-class`, so it is located by its header
+ * text. Returns -1 when the column is not shown.
+ */
+function findColumnIndexByHeader(table: HTMLTableElement, headerLabel: string) {
+  return Array.from(table.querySelectorAll<HTMLTableCellElement>('thead tr th')).findIndex(
+    (header) => normalizeText(header.textContent) === headerLabel,
+  );
+}
+
+/** Replaces the whole cell content — the template's remark can span several lines. */
+function setCellTextByIndex(row: HTMLTableRowElement, columnIndex: number, text: string) {
+  const cell = row.cells[columnIndex];
+  if (!cell) {
+    return;
+  }
+
+  const span = document.createElement('span');
+  span.textContent = text;
+  cell.replaceChildren(span);
+}
+
 function setStatusBadgeColor(row: HTMLTableRowElement) {
   for (const badge of Array.from(row.querySelectorAll(STATUS_BADGE_SELECTOR))) {
     badge.className = badge.className.replace(BADGE_COLOR_CLASS_PATTERN, DEMO_STATUS_BADGE_CLASS);
   }
 }
 
-function buildDemoRow(template: HTMLTableRowElement, demoRow: DemoRow) {
+function buildDemoRow(
+  template: HTMLTableRowElement,
+  demoRow: DemoRow,
+  remarkColumnIndex: number,
+) {
   const row = template.cloneNode(true) as HTMLTableRowElement;
   row.setAttribute(DEMO_ROW_ATTRIBUTE, 'true');
 
   setCellText(row, 'column-identification-class', demoRow.label);
   setCellText(row, 'column-start-class', formatDateTime(Date.now() - 4 * 60 * MINUTE));
   setCellText(row, 'column-end-class', formatDateTime(Date.now() + demoRow.endsInMinutes * MINUTE));
-  setCellText(row, 'column-customer-class', `${demoRow.label} — erwartet: ${demoRow.expectation}`);
+  setCellText(row, 'column-customer-class', demoRow.label);
+  setCellTextByIndex(row, remarkColumnIndex, demoRow.expectation);
   setCellText(row, 'column-totalPrice-class', '222.00');
   setCellText(row, 'column-paymentStatus-class', demoRow.openAmount);
   setCellText(row, 'column-status-class', DEMO_STATUS);
@@ -163,12 +193,15 @@ export class RentalListDemoRowsController {
       return;
     }
 
+    const table = tbody.closest('table');
+    const remarkColumnIndex = table ? findColumnIndexByHeader(table, REMARK_COLUMN_HEADER) : -1;
+
     this.observer?.disconnect();
 
     try {
       const fragment = document.createDocumentFragment();
       for (const demoRow of DEMO_ROWS) {
-        fragment.append(buildDemoRow(template, demoRow));
+        fragment.append(buildDemoRow(template, demoRow, remarkColumnIndex));
       }
       tbody.prepend(fragment);
     } finally {

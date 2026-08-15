@@ -28,25 +28,27 @@ type DemoRow = {
 };
 
 // The overdue rows sit exactly one minute past their threshold, so each one
-// shows the first minute in which its colour applies.
+// shows the first minute in which its colour applies. The green rows sample the
+// whole ramp instead: just inside its upper end, halfway, and its last minute.
 const DEMO_ROWS: DemoRow[] = [
   {
     label: 'DEMO 1',
-    endsInMinutes: 300,
+    endsInMinutes: 209,
     openAmount: '0.00',
-    expectation: 'Mietende kräftig grün (über 3 Std. 30 Min.) + Badge „-5 Std."',
+    expectation: 'Kräftigstes Grün (1 Min. unter 3 Std. 30 Min.) + Badge „-3 Std. 29 Min."',
   },
   {
     label: 'DEMO 2',
-    endsInMinutes: 120,
+    endsInMinutes: 105,
     openAmount: '0.00',
-    expectation: 'Mietende halb blasses Grün + Badge „-2 Std."',
+    expectation: 'Grün auf halbem Weg (50 %) + Badge „-1 Std. 45 Min."',
   },
   {
     label: 'DEMO 3',
-    endsInMinutes: 10,
+    endsInMinutes: 1,
     openAmount: '0.00',
-    expectation: 'Mietende fast weisses Grün + Badge „-10 Min."',
+    expectation:
+      'Blassestes Grün, wechselt in unter einer Minute auf gelb (Badge „-1 Min." → „+0 Min.").',
   },
   {
     label: 'DEMO 4',
@@ -83,13 +85,6 @@ const DEMO_ROWS: DemoRow[] = [
     endsInMinutes: -29.5,
     openAmount: '0.00',
     expectation: 'Gelb, wechselt nach ~30 Sek. auf orange (Badge zählt mit).',
-  },
-  {
-    label: 'DEMO 10',
-    endsInMinutes: 1.5,
-    openAmount: '0.00',
-    expectation:
-      'Blassestes Grün, wechselt in rund einer Minute auf gelb (Badge „-1 Min." → „+0 Min.").',
   },
 ];
 

@@ -34,13 +34,19 @@ export default defineBackground({
     chrome.webNavigation.onCompleted.addListener(handleResultPage, RESULT_URL_FILTER);
     chrome.webNavigation.onHistoryStateUpdated.addListener(handleResultPage, RESULT_URL_FILTER);
 
-    // Auto-print klebetiketten/auftrag PDFs to a local CUPS printer. The PDF still
-    // loads normally in the tab via Chrome's built-in viewer; this fires a second,
-    // independent fetch + IPP submission in the background. See CUPS_PRINT_JOBS.
-    chrome.webNavigation.onCompleted.addListener(
-      (details) => void handleCupsPrintNavigation(details.url),
-      CUPS_PRINT_URL_FILTER,
-    );
+    // Auto-print klebetiketten/auftrag/kassenbon PDFs to a local CUPS printer. The
+    // PDF still loads normally in the tab via Chrome's built-in viewer; this fires a
+    // second, independent fetch + IPP submission in the background. See CUPS_PRINT_JOBS.
+    //
+    // Both events are needed. URLs that answer with an HTML wrapper page (Auftrag)
+    // reach onCompleted, but URLs that answer with the PDF itself (Kassenbon) are
+    // handed to Chrome's PDF viewer and only reliably reach onCommitted.
+    // handleCupsPrintNavigation() de-duplicates the overlap.
+    const handleCupsPrintPage = (details: chrome.webNavigation.WebNavigationFramedCallbackDetails) =>
+      void handleCupsPrintNavigation(details.url);
+
+    chrome.webNavigation.onCommitted.addListener(handleCupsPrintPage, CUPS_PRINT_URL_FILTER);
+    chrome.webNavigation.onCompleted.addListener(handleCupsPrintPage, CUPS_PRINT_URL_FILTER);
 
     const setSessionAccessLevel = () =>
       chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });

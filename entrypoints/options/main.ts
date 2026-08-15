@@ -30,6 +30,9 @@ function appendDescription(
     const mark = document.createElement('span');
     mark.className = 'options__description-mark';
     mark.style.backgroundColor = part.backgroundColor;
+    if (part.color) {
+      mark.style.color = part.color;
+    }
     mark.textContent = part.text;
     descriptionElement.append(mark);
   }

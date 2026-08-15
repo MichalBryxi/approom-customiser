@@ -1,6 +1,7 @@
 import { storage } from 'wxt/utils/storage';
 
 import { CHECK_IN_STATUS_COLORS } from './check-in-status-colors';
+import { RENTAL_LIST_COLORS } from './rental-list-colors';
 import type {
   CustomerRegistrationFieldId,
   CustomerRegistrationFieldLabelSettingId,
@@ -17,6 +18,8 @@ export type FeatureDescriptionPart =
   | {
       text: string;
       backgroundColor: string;
+      /** Needed when the background is too dark for the default text colour. */
+      color?: string;
     };
 
 type FeatureDefinition = {
@@ -265,6 +268,12 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rechnungenMitarbeiterPreisKundentypPattern: '.*Mitarbeiter.*',
   rentalErfasstDurchFilter: true,
   rentalErfasstDurchFilterPattern: '',
+  rentalListOpenAmount: true,
+  rentalListOverdue: true,
+  rentalListOverdue30: true,
+  rentalListOverdue60: true,
+  rentalListOverdueBadge: true,
+  rentalListDemoRows: false,
   absenceCalendarExport: true,
   absenceCalendarExportMarkActive: true,
   absenceCalendarExportMandantPattern: '.*',
@@ -455,6 +464,73 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     label: '"Erfasst durch" filtern',
     description:
       'Filtert das „Erfasst durch"-Dropdown so, dass nur bestimmte Mitarbeiter zur Auswahl stehen.',
+  },
+  {
+    id: 'rentalListOpenAmount',
+    groupId: 'rental-rent',
+    label: 'Offener Betrag: Zelle rot',
+    description:
+      'Färbt in der Mietliste bei Zeilen mit Status „Vermietet" und einem offenen Betrag grösser als 0 die Zelle „Offener Betrag" rot — im selben Rot wie ein um mehr als 60 Minuten überschrittenes Mietende. Gefärbt wird nur diese Zelle, nicht die ganze Zeile.',
+    descriptionParts: [
+      'Färbt in der Mietliste bei Zeilen mit Status „Vermietet" und einem offenen Betrag grösser als 0 die Zelle ',
+      { text: 'Offener Betrag', backgroundColor: RENTAL_LIST_COLORS.openAmount },
+      ' rot — im selben Rot wie ein um mehr als 60 Minuten überschrittenes Mietende. Gefärbt wird nur diese Zelle, nicht die ganze Zeile.',
+    ],
+  },
+  {
+    id: 'rentalListOverdue',
+    groupId: 'rental-rent',
+    label: 'Mietende überschritten: Zelle gelb',
+    description:
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" gelb, sobald das Mietende erreicht ist. Gefärbt wird nur diese Zelle, nicht die ganze Zeile; die Farbe erscheint automatisch, ohne die Seite neu zu laden. Sind mehrere Mietende-Farben eingeschaltet, gilt immer die stärkste zutreffende.',
+    descriptionParts: [
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" ',
+      { text: 'gelb', backgroundColor: RENTAL_LIST_COLORS.overdue },
+      ', sobald das Mietende erreicht ist. Gefärbt wird nur diese Zelle, nicht die ganze Zeile; die Farbe erscheint automatisch, ohne die Seite neu zu laden. Sind mehrere Mietende-Farben eingeschaltet, gilt immer die stärkste zutreffende.',
+    ],
+  },
+  {
+    id: 'rentalListOverdue30',
+    groupId: 'rental-rent',
+    label: 'Mietende 30 Minuten überschritten: Zelle orange',
+    description:
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" orange, sobald das Mietende 30 Minuten oder länger zurückliegt. Gefärbt wird nur diese Zelle, nicht die ganze Zeile; die Farbe wechselt automatisch, ohne die Seite neu zu laden. Sind mehrere Mietende-Farben eingeschaltet, gilt immer die stärkste zutreffende.',
+    descriptionParts: [
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" ',
+      { text: 'orange', backgroundColor: RENTAL_LIST_COLORS.overdue30 },
+      ', sobald das Mietende 30 Minuten oder länger zurückliegt. Gefärbt wird nur diese Zelle, nicht die ganze Zeile; die Farbe wechselt automatisch, ohne die Seite neu zu laden. Sind mehrere Mietende-Farben eingeschaltet, gilt immer die stärkste zutreffende.',
+    ],
+  },
+  {
+    id: 'rentalListOverdue60',
+    groupId: 'rental-rent',
+    label: 'Mietende 60 Minuten überschritten: Zelle rot',
+    description:
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" rot, sobald das Mietende 60 Minuten oder länger zurückliegt. Gefärbt wird nur diese Zelle, nicht die ganze Zeile; die Farbe wechselt automatisch, ohne die Seite neu zu laden. Sind mehrere Mietende-Farben eingeschaltet, gilt immer die stärkste zutreffende.',
+    descriptionParts: [
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" ',
+      { text: 'rot', backgroundColor: RENTAL_LIST_COLORS.overdue60 },
+      ', sobald das Mietende 60 Minuten oder länger zurückliegt. Gefärbt wird nur diese Zelle, nicht die ganze Zeile; die Farbe wechselt automatisch, ohne die Seite neu zu laden. Sind mehrere Mietende-Farben eingeschaltet, gilt immer die stärkste zutreffende.',
+    ],
+  },
+  {
+    id: 'rentalListOverdueBadge',
+    groupId: 'rental-rent',
+    label: 'Mietende überschritten: Dauer als Badge',
+    description:
+      'Zeigt bei Zeilen mit Status „Vermietet" in der Zelle „Mietende" ein schwarzes Badge mit weisser Schrift an, sobald das Mietende vorbei ist — z. B. „+45 Min." oder „+2 Std. 15 Min.". Der Wert zählt minütlich weiter, ohne die Seite neu zu laden, und ist unabhängig von den Mietende-Farben ein- und ausschaltbar.',
+    descriptionParts: [
+      'Zeigt bei Zeilen mit Status „Vermietet" in der Zelle „Mietende" ein Badge ',
+      { text: '+45 Min.', backgroundColor: '#000', color: '#fff' },
+      ' an, sobald das Mietende vorbei ist. Der Wert zählt minütlich weiter, ohne die Seite neu zu laden.',
+    ],
+  },
+  {
+    id: 'rentalListDemoRows',
+    groupId: 'rental-rent',
+    label: 'Demo-Zeilen in der Mietliste',
+    description:
+      'Zum Vorführen und Prüfen der Einfärbungen: fügt der Mietliste sieben erfundene Zeilen mit Status „Vermietet" hinzu, die alle Fälle abdecken — jede überfällige Zeile genau eine Minute nach ihrer Schwelle, dazu eine Zeile, die nach rund 30 Sekunden von Gelb auf Orange wechselt. In der Spalte „Kunde" steht jeweils, wie die Zeile aussehen soll. Diese Zeilen existieren nur in der Anzeige, werden nirgends gespeichert und verschwinden beim Ausschalten dieser Option.',
   },
   {
     id: 'fahrzeuglagerStickerPrint',

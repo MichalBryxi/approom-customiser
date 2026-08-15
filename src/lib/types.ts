@@ -12,6 +12,12 @@ export type FeatureId =
   | 'rentalSignatureSaveButton'
   | 'rechnungenMitarbeiterPreis'
   | 'rentalErfasstDurchFilter'
+  | 'rentalListOpenAmount'
+  | 'rentalListOverdue'
+  | 'rentalListOverdue30'
+  | 'rentalListOverdue60'
+  | 'rentalListOverdueBadge'
+  | 'rentalListDemoRows'
   | 'absenceCalendarExport'
   | 'fahrzeuglagerStickerPrint'
   | 'cupsPrint';
@@ -74,6 +80,12 @@ export type ExtensionSettings = {
   rechnungenMitarbeiterPreisKundentypPattern: string;
   rentalErfasstDurchFilter: boolean;
   rentalErfasstDurchFilterPattern: string;
+  rentalListOpenAmount: boolean;
+  rentalListOverdue: boolean;
+  rentalListOverdue30: boolean;
+  rentalListOverdue60: boolean;
+  rentalListOverdueBadge: boolean;
+  rentalListDemoRows: boolean;
   absenceCalendarExport: boolean;
   absenceCalendarExportMarkActive: boolean;
   absenceCalendarExportMandantPattern: string;

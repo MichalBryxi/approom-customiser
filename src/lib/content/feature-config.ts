@@ -4,6 +4,8 @@ import { CustomerRegistrationFieldsController } from './customer-registration-fi
 import type { ContentFeatureDefinition } from './feature-runtime';
 import { RechnungenMitarbeiterController } from './rechnungen-mitarbeiter-controller';
 import { RentalErfasstDurchFilterController } from './rental-erfasst-durch-filter-controller';
+import { RentalListDemoRowsController } from './rental-list-demo-rows-controller';
+import { RentalListHighlightController } from './rental-list-highlight-controller';
 import { RentalListSignatureHighlightController } from './rental-list-signature-highlight-controller';
 import { RentalFleetPrintController } from './rental-fleet-print-controller';
 import { RentalPrintFeature } from './rental-print-feature';
@@ -24,12 +26,16 @@ const unterschriftHighlightController = new UnterschriftHighlightController();
 const rechnungenMitarbeiterController = new RechnungenMitarbeiterController();
 const rentalErfasstDurchFilterController = new RentalErfasstDurchFilterController();
 const rentalListSignatureHighlightController = new RentalListSignatureHighlightController();
+const rentalListHighlightController = new RentalListHighlightController();
+const rentalListDemoRowsController = new RentalListDemoRowsController();
 const rentalSignatureNameController = new RentalSignatureNameController();
 const rentalSignatureSaveButtonController = new RentalSignatureSaveButtonController();
 const absenceCalendarExportController = new AbsenceCalendarExportController();
 const fahrzeuglagerStickerPrintController = new FahrzeuglagerStickerPrintController();
 
 const rentalTimelineButtonAnchor = '//button[contains(normalize-space(.), "Zeitachse")]';
+// The rental list table; anchored via a header column that cannot be hidden.
+const rentalListTableAnchor = '//table[.//th//span[normalize-space(.) = "Mietende"]]';
 const currentOrderHeadingAnchor = '#panel_current_order_step2';
 const storageOrderFrameUrl = {
   pathEquals: '/start.php',
@@ -73,6 +79,60 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
     append: 'before',
     mount: (wrapper) =>
       mountHiddenFeature(wrapper, () => rentalListSignatureHighlightController.mount()),
+  },
+  {
+    id: 'rentalListDemoRows',
+    label: 'Demo-Zeilen in der Mietliste',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListDemoRowsController.mount()),
+  },
+  {
+    id: 'rentalListOpenAmount',
+    label: 'Offener Betrag: Zelle rot',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('openAmount')),
+  },
+  {
+    id: 'rentalListOverdue',
+    label: 'Mietende überschritten: Zelle gelb',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('overdue')),
+  },
+  {
+    id: 'rentalListOverdue30',
+    label: 'Mietende 30 Minuten überschritten: Zelle orange',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('overdue30')),
+  },
+  {
+    id: 'rentalListOverdue60',
+    label: 'Mietende 60 Minuten überschritten: Zelle rot',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('overdue60')),
+  },
+  {
+    id: 'rentalListOverdueBadge',
+    label: 'Mietende überschritten: Dauer als Badge',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('overdueBadge')),
   },
   {
     id: 'checkInQuantityWarning',

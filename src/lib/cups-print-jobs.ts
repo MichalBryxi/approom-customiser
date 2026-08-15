@@ -45,6 +45,15 @@ export const CUPS_PRINT_JOBS: CupsPrintJobDefinition[] = [
     pathEquals: '/office/content/data/agenda/view_pdf.php',
     queryContains: 'print_document=1',
   },
+  {
+    // Kassenbon shares the Auftrag printer — see the "Kassenbon-/Auftragsdrucker"
+    // field in the options page.
+    printerNameSettingId: 'cupsPrintAuftragPrinterName',
+    jobName: 'Kassenbon',
+    hostEquals: 'erp.app-room.ch',
+    pathEquals: '/office/content/data/office/pdf/Kassenbon.php',
+    queryContains: 'die_id=',
+  },
 ];
 
 const PDF_MAGIC_BYTES = '%PDF-';
@@ -58,17 +67,22 @@ function isPdf(bytes: ArrayBuffer): boolean {
 }
 
 // Some ERP print URLs (e.g. the "Auftrag" view) return an HTML wrapper page
-// with the actual PDF loaded in an <iframe id="pdf-iframe">, rather than the
-// PDF itself. Extract that iframe's src so it can be fetched directly.
-function extractIframeSrc(html: string, iframeId: string): string | null {
-  const iframeTags = html.match(/<iframe\b[^>]*>/gi) ?? [];
-  const idPattern = new RegExp(`\\bid=["']${iframeId}["']`, 'i');
-  const iframeTag = iframeTags.find((tag) => idPattern.test(tag));
-  if (!iframeTag) {
-    return null;
+// with the actual PDF embedded, rather than the PDF itself. Prefer the known
+// <iframe id="pdf-iframe">, then fall back to any embedded document, since the
+// wrapper markup differs between ERP print pages.
+function extractEmbeddedDocumentSrc(html: string): string | null {
+  const tags = html.match(/<(?:iframe|embed|object)\b[^>]*>/gi) ?? [];
+  const knownIframe = tags.find((tag) => /\bid=["']pdf-iframe["']/i.test(tag));
+  const candidates = knownIframe ? [knownIframe, ...tags] : tags;
+
+  for (const tag of candidates) {
+    const srcMatch = tag.match(/\b(?:src|data)=["']([^"']+)["']/i);
+    if (srcMatch) {
+      return srcMatch[1].replace(/&amp;/g, '&');
+    }
   }
-  const srcMatch = iframeTag.match(/\bsrc=["']([^"']+)["']/i);
-  return srcMatch ? srcMatch[1].replace(/&amp;/g, '&') : null;
+
+  return null;
 }
 
 async function fetchPdfDocument(url: string): Promise<ArrayBuffer | null> {
@@ -83,9 +97,13 @@ async function fetchPdfDocument(url: string): Promise<ArrayBuffer | null> {
     return bytes;
   }
 
-  const iframeSrc = extractIframeSrc(new TextDecoder().decode(bytes), 'pdf-iframe');
+  const html = new TextDecoder().decode(bytes);
+  const iframeSrc = extractEmbeddedDocumentSrc(html);
   if (!iframeSrc) {
-    console.error(`[approom-customiser] CUPS print: ${url} did not return a PDF and no #pdf-iframe was found`);
+    console.error(
+      `[approom-customiser] CUPS print: ${url} did not return a PDF and no embedded document was found. First 300 characters of the response:`,
+      html.slice(0, 300),
+    );
     return null;
   }
 
@@ -123,19 +141,51 @@ function findMatchingCupsPrintJob(url: string): CupsPrintJobDefinition | null {
   );
 }
 
+// The same navigation is reported by more than one webNavigation event (see
+// background.ts), so a URL handled moments ago must not be printed twice.
+// Reloading the page later still reprints, which is the expected way to
+// re-trigger a print.
+const DEDUPE_WINDOW_MS = 5000;
+const recentlyHandled = new Map<string, number>();
+
+function isDuplicateNavigation(url: string, now: number) {
+  for (const [handledUrl, handledAt] of recentlyHandled) {
+    if (now - handledAt > DEDUPE_WINDOW_MS) {
+      recentlyHandled.delete(handledUrl);
+    }
+  }
+
+  if (recentlyHandled.has(url)) {
+    return true;
+  }
+
+  recentlyHandled.set(url, now);
+  return false;
+}
+
 export async function handleCupsPrintNavigation(url: string) {
   const job = findMatchingCupsPrintJob(url);
   if (!job || job.disabled) {
     return;
   }
 
+  if (isDuplicateNavigation(url, Date.now())) {
+    return;
+  }
+
   const settings = await getSettings();
   if (!settings.extensionEnabled || !settings.cupsPrint) {
+    console.log(
+      `[approom-customiser] CUPS print: ${job.jobName}: skipped — ${settings.extensionEnabled ? 'CUPS-Direktdruck ist ausgeschaltet' : 'die Erweiterung ist ausgeschaltet'}`,
+    );
     return;
   }
 
   const printerName = settings[job.printerNameSettingId].trim();
   if (!printerName) {
+    console.log(
+      `[approom-customiser] CUPS print: ${job.jobName}: skipped — kein Druckername konfiguriert (${job.printerNameSettingId})`,
+    );
     return;
   }
 

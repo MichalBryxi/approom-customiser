@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0] - 2026-08-15
+
+### New features
+- **Rental list — overdue rentals**: for rows with status "Vermietet", the "Mietende" cell is now coloured by how long ago that time passed — yellow once it is reached, orange from 30 minutes, red from 60 minutes. Each threshold has its own toggle in settings under "Rental > Vermietungen"; when several are on, the most severe applies. The colour changes on its own while the list stays open, without a page reload.
+- **Rental list — overdue duration**: the same cell gets a black badge with white text showing how far past the "Mietende" a rental is ("+45 Min.", "+2 Std. 15 Min."), counting up every minute. Separate toggle in settings.
+- **Rental list — open amount**: for rows with status "Vermietet" and an "Offener Betrag" greater than 0, that single cell is now coloured red — the same red as a Mietende more than 60 minutes overdue. Separate toggle in settings.
+- **Rental list — demo rows**: an optional toggle (off by default) that adds seven made-up "Vermietet" rows to the list covering every colouring case, including one that switches from yellow to orange after about 30 seconds. The Kunde column of each row states what it should look like. The rows are display-only and disappear when the toggle is switched off.
+
+### Fixes
+- **CUPS direct print now also works for the Kassenbon** (`Kassenbon.php`). Two things were wrong. First, that URL was never listed among the direct-print rules — only the Auftrag view was, so opening a Kassenbon triggered nothing at all. Second, printing was started only from the `webNavigation.onCompleted` event: the Auftrag URL answers with an HTML page and reaches it, but the Kassenbon URL answers with the PDF itself, which Chrome hands to its built-in PDF viewer without reliably getting there. Printing is now also started from `onCommitted`, with the same URL ignored for 5 seconds afterwards so the overlapping events cannot print twice. Kassenbon goes to the printer configured under "Kassenbon-/Auftragsdrucker", the same one as the Auftrag.
+- **CUPS direct print — better diagnosis when nothing prints**: PDFs delivered inside an HTML page are now found in any embedded `iframe`/`embed`/`object` instead of only `#pdf-iframe`, and the background console states why a print was skipped (extension off, direct print off, no printer name configured) rather than staying silent.
+
 ## [0.22.4] - 2026-08-07
 
 ### Changes

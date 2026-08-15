@@ -1,4 +1,4 @@
-import { RENTAL_LIST_COLORS } from '../rental-list-colors';
+import { getOnTimeColor, RENTAL_LIST_COLORS } from '../rental-list-colors';
 import { normalizeText } from '../text';
 import { injectStyle } from './inject-style';
 
@@ -6,29 +6,35 @@ import { injectStyle } from './inject-style';
  * Highlights cells of the rental list (/rental/rent) for rows that are
  * currently "Vermietet":
  *
+ * - `onTime`       — "Mietende" still ahead → that cell turns green, fading from
+ *                    full green at 3.5 hours left to almost white at the Mietende
  * - `overdue`      — "Mietende" reached → that cell turns yellow
  * - `overdue30`    — "Mietende" 30 minutes or more ago → that cell turns orange
  * - `overdue60`    — "Mietende" 60 minutes or more ago → that cell turns red
- * - `overdueBadge` — adds a black badge with the overdue duration to that cell
+ * - `overdueBadge` — adds a badge with the remaining ("-2 Std.", white) or the
+ *                    overdue ("+45 Min.", black) duration to that cell
  * - `openAmount`   — "Offener Betrag" > 0 → that cell turns red
  *
  * Every rule has its own settings toggle and is registered separately, but all
  * of them share this single controller so that only one observer/timer exists.
- * The overdue colours cannot stack — the most severe enabled one wins. Rules
- * that target different cells combine freely.
+ * The "Mietende" colours cannot stack — `onTime` and the overdue colours are
+ * mutually exclusive by time, and of the overdue ones the most severe enabled
+ * one wins. Rules that target different cells combine freely.
  */
 export type RentalListHighlightRule =
   | 'openAmount'
+  | 'onTime'
   | 'overdue'
   | 'overdue30'
   | 'overdue60'
   | 'overdueBadge';
 
 const STYLE_ID = 'approom-rental-list-highlight-style';
-const END_CELL_ATTRIBUTE = 'data-app-room-overdue';
+// Also set for the green "still on time" colouring, hence the neutral name.
+const END_CELL_ATTRIBUTE = 'data-app-room-end-highlight';
 const BADGE_ATTRIBUTE = 'data-app-room-overdue-badge';
 const OPEN_AMOUNT_CELL_ATTRIBUTE = 'data-app-room-open-amount';
-const OVERDUE_COLOR_VARIABLE = '--approom-overdue-color';
+const END_COLOR_VARIABLE = '--approom-end-color';
 
 const STATUS_RENTED = 'Vermietet';
 // "Mietende" cannot be hidden via the column chooser, so it is a safe anchor.
@@ -40,6 +46,10 @@ const BODY_ROW_SELECTOR = 'tr[data-pc-section="bodyrow"]';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
+// From this much time left the green stays at its most vivid; below it the
+// shade fades towards white, one step per minute.
+const ON_TIME_WINDOW = 3.5 * HOUR;
+const ON_TIME_STEPS = ON_TIME_WINDOW / MINUTE;
 const OVERDUE_THRESHOLDS: Array<{ rule: RentalListHighlightRule; offset: number; color: string }> = [
   { rule: 'overdue60', offset: 60 * MINUTE, color: RENTAL_LIST_COLORS.overdue60 },
   { rule: 'overdue30', offset: 30 * MINUTE, color: RENTAL_LIST_COLORS.overdue30 },
@@ -51,7 +61,7 @@ const MAX_REFRESH_DELAY = 12 * HOUR;
 
 const STYLE = `
 td[${END_CELL_ATTRIBUTE}] {
-  background-color: var(${OVERDUE_COLOR_VARIABLE}, transparent) !important;
+  background-color: var(${END_COLOR_VARIABLE}, transparent) !important;
 }
 span[${BADGE_ATTRIBUTE}] {
   display: inline-block;
@@ -66,16 +76,26 @@ span[${BADGE_ATTRIBUTE}] {
   white-space: nowrap;
   vertical-align: middle;
 }
+span[${BADGE_ATTRIBUTE}="remaining"] {
+  background-color: #fff;
+  color: #000;
+  /* Inset instead of a border so the badge keeps the same size as the black
+     one — without an outline it would vanish on a barely green cell. */
+  box-shadow: inset 0 0 0 1px #adb5bd;
+}
 td[${OPEN_AMOUNT_CELL_ATTRIBUTE}] {
   background-color: ${RENTAL_LIST_COLORS.openAmount} !important;
 }
 `;
 
+/** White counts down to the Mietende, black counts up from it. */
+type BadgeVariant = 'remaining' | 'overdue';
+
 type RowHighlight = {
   /** Background of the "Mietende" cell, or null when it should stay untouched. */
-  overdueColor: string | null;
-  /** Text of the overdue badge in the "Mietende" cell, or null for no badge. */
-  badgeText: string | null;
+  endCellColor: string | null;
+  /** Badge in the "Mietende" cell, or null for no badge. */
+  badge: { text: string; variant: BadgeVariant } | null;
   /** "Offener Betrag" > 0 — colours that cell red. */
   highlightOpenAmount: boolean;
   nextChangeAt: number | null;
@@ -111,16 +131,15 @@ function parseEndDate(value: string) {
   return Number.isNaN(date.getTime()) ? null : date.getTime();
 }
 
-function formatOverdue(elapsed: number) {
-  const totalMinutes = Math.floor(elapsed / MINUTE);
+function formatDuration(totalMinutes: number, sign: '+' | '-') {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
   if (hours === 0) {
-    return `+${minutes} Min.`;
+    return `${sign}${minutes} Min.`;
   }
 
-  return minutes === 0 ? `+${hours} Std.` : `+${hours} Std. ${minutes} Min.`;
+  return minutes === 0 ? `${sign}${hours} Std.` : `${sign}${hours} Std. ${minutes} Min.`;
 }
 
 function findRentalTable() {
@@ -143,10 +162,10 @@ function isRented(row: HTMLTableRowElement) {
 }
 
 /** Puts the badge right after the date text, so it stays on the same line. */
-function setOverdueBadge(endCell: HTMLElement, text: string | null) {
+function setOverdueBadge(endCell: HTMLElement, state: RowHighlight['badge']) {
   const existing = endCell.querySelector<HTMLElement>(`span[${BADGE_ATTRIBUTE}]`);
 
-  if (!text) {
+  if (!state) {
     existing?.remove();
     return;
   }
@@ -154,8 +173,11 @@ function setOverdueBadge(endCell: HTMLElement, text: string | null) {
   if (existing) {
     // Assigning identical text would still replace the text node and retrigger
     // the observer, so only write when it actually changed.
-    if (existing.textContent !== text) {
-      existing.textContent = text;
+    if (existing.textContent !== state.text) {
+      existing.textContent = state.text;
+    }
+    if (existing.getAttribute(BADGE_ATTRIBUTE) !== state.variant) {
+      existing.setAttribute(BADGE_ATTRIBUTE, state.variant);
     }
     return;
   }
@@ -168,14 +190,14 @@ function setOverdueBadge(endCell: HTMLElement, text: string | null) {
   }
 
   const badge = document.createElement('span');
-  badge.setAttribute(BADGE_ATTRIBUTE, 'true');
-  badge.textContent = text;
+  badge.setAttribute(BADGE_ATTRIBUTE, state.variant);
+  badge.textContent = state.text;
   dateSpan.after(badge);
 }
 
-/** The row is not (or not yet) overdue — only the open-amount cell may be marked. */
-function withoutOverdue(highlightOpenAmount: boolean): RowHighlight {
-  return { overdueColor: null, badgeText: null, highlightOpenAmount, nextChangeAt: null };
+/** The "Mietende" is unusable (not rented, unparsable date) — leave that cell alone. */
+function withoutEndHighlight(highlightOpenAmount: boolean): RowHighlight {
+  return { endCellColor: null, badge: null, highlightOpenAmount, nextChangeAt: null };
 }
 
 function applyRowHighlight(row: HTMLTableRowElement, state: RowHighlight) {
@@ -183,20 +205,20 @@ function applyRowHighlight(row: HTMLTableRowElement, state: RowHighlight) {
   const endCell = endCellContent?.closest('td') ?? null;
 
   if (endCellContent && endCell) {
-    if (state.overdueColor) {
+    if (state.endCellColor) {
       if (!endCell.hasAttribute(END_CELL_ATTRIBUTE)) {
         endCell.setAttribute(END_CELL_ATTRIBUTE, 'true');
       }
 
-      if (endCell.style.getPropertyValue(OVERDUE_COLOR_VARIABLE) !== state.overdueColor) {
-        endCell.style.setProperty(OVERDUE_COLOR_VARIABLE, state.overdueColor);
+      if (endCell.style.getPropertyValue(END_COLOR_VARIABLE) !== state.endCellColor) {
+        endCell.style.setProperty(END_COLOR_VARIABLE, state.endCellColor);
       }
     } else if (endCell.hasAttribute(END_CELL_ATTRIBUTE)) {
       endCell.removeAttribute(END_CELL_ATTRIBUTE);
-      endCell.style.removeProperty(OVERDUE_COLOR_VARIABLE);
+      endCell.style.removeProperty(END_COLOR_VARIABLE);
     }
 
-    setOverdueBadge(endCellContent, state.badgeText);
+    setOverdueBadge(endCellContent, state.badge);
   }
 
   const openAmountCell = row.querySelector(OPEN_AMOUNT_CELL_SELECTOR)?.closest('td') ?? null;
@@ -270,7 +292,7 @@ export class RentalListHighlightController {
 
   private evaluateRow(row: HTMLTableRowElement, now: number): RowHighlight {
     if (!isRented(row)) {
-      return withoutOverdue(false);
+      return withoutEndHighlight(false);
     }
 
     const highlightOpenAmount =
@@ -279,15 +301,29 @@ export class RentalListHighlightController {
 
     const endsAt = parseEndDate(row.querySelector(END_CELL_SELECTOR)?.textContent ?? '');
     if (endsAt === null) {
-      return withoutOverdue(highlightOpenAmount);
+      return withoutEndHighlight(highlightOpenAmount);
     }
 
-    let overdueColor: string | null = null;
+    let endCellColor: string | null = null;
     let nextChangeAt: number | null = null;
 
     const track = (timestamp: number) => {
       nextChangeAt = nextChangeAt === null ? timestamp : Math.min(nextChangeAt, timestamp);
     };
+
+    // The whole minutes still left, counted the way the countdown badge shows
+    // them: 1 for anything inside the last minute, 0 once the Mietende is due.
+    const remainingMinutes = Math.max(Math.ceil((endsAt - now) / MINUTE), 0);
+    // When that count ticks down — the moment both the green shade and the
+    // countdown badge change. Only meaningful before the Mietende.
+    const remainingTick = endsAt - (remainingMinutes - 1) * MINUTE;
+
+    if (this.enabledRules.has('onTime') && now < endsAt) {
+      endCellColor = getOnTimeColor(Math.min(remainingMinutes, ON_TIME_STEPS) / ON_TIME_STEPS);
+      // Above the window the shade stays at full green, so the next change is
+      // the moment the row enters the window.
+      track(remainingMinutes > ON_TIME_STEPS ? endsAt - ON_TIME_WINDOW : remainingTick);
+    }
 
     for (const threshold of OVERDUE_THRESHOLDS) {
       if (!this.enabledRules.has(threshold.rule)) {
@@ -298,7 +334,7 @@ export class RentalListHighlightController {
 
       if (now >= reachedAt) {
         // Thresholds are ordered most severe first — the first hit wins.
-        overdueColor = overdueColor ?? threshold.color;
+        endCellColor = endCellColor ?? threshold.color;
         continue;
       }
 
@@ -306,19 +342,21 @@ export class RentalListHighlightController {
       track(reachedAt);
     }
 
-    let badgeText: string | null = null;
+    let badge: RowHighlight['badge'] = null;
 
     if (this.enabledRules.has('overdueBadge')) {
       if (now >= endsAt) {
-        badgeText = formatOverdue(now - endsAt);
+        const overdueMinutes = Math.floor((now - endsAt) / MINUTE);
+        badge = { text: formatDuration(overdueMinutes, '+'), variant: 'overdue' };
         // The badge counts minutes, so it needs the next whole minute after Mietende.
-        track(endsAt + (Math.floor((now - endsAt) / MINUTE) + 1) * MINUTE);
+        track(endsAt + (overdueMinutes + 1) * MINUTE);
       } else {
-        track(endsAt);
+        badge = { text: formatDuration(remainingMinutes, '-'), variant: 'remaining' };
+        track(remainingTick);
       }
     }
 
-    return { overdueColor, badgeText, highlightOpenAmount, nextChangeAt };
+    return { endCellColor, badge, highlightOpenAmount, nextChangeAt };
   }
 
   private scheduleRefresh(nextChangeAt: number, now: number) {

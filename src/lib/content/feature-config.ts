@@ -99,6 +99,15 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
       mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('openAmount')),
   },
   {
+    id: 'rentalListOnTime',
+    label: 'Mietende noch nicht erreicht: Zelle grün',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('onTime')),
+  },
+  {
     id: 'rentalListOverdue',
     label: 'Mietende überschritten: Zelle gelb',
     url: { pathEquals: '/rental/rent' },

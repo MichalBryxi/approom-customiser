@@ -13,6 +13,7 @@ export type FeatureId =
   | 'rechnungenMitarbeiterPreis'
   | 'rentalErfasstDurchFilter'
   | 'rentalListOpenAmount'
+  | 'rentalListOnTime'
   | 'rentalListOverdue'
   | 'rentalListOverdue30'
   | 'rentalListOverdue60'
@@ -81,6 +82,7 @@ export type ExtensionSettings = {
   rentalErfasstDurchFilter: boolean;
   rentalErfasstDurchFilterPattern: string;
   rentalListOpenAmount: boolean;
+  rentalListOnTime: boolean;
   rentalListOverdue: boolean;
   rentalListOverdue30: boolean;
   rentalListOverdue60: boolean;

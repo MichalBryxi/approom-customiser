@@ -32,45 +32,64 @@ type DemoRow = {
 const DEMO_ROWS: DemoRow[] = [
   {
     label: 'DEMO 1',
-    endsInMinutes: 120,
+    endsInMinutes: 300,
     openAmount: '0.00',
-    expectation: 'Keine Markierung.',
+    expectation: 'Mietende kräftig grün (über 3 Std. 30 Min.) + Badge „-5 Std."',
   },
   {
     label: 'DEMO 2',
+    endsInMinutes: 120,
+    openAmount: '0.00',
+    expectation: 'Mietende halb blasses Grün + Badge „-2 Std."',
+  },
+  {
+    label: 'DEMO 3',
+    endsInMinutes: 10,
+    openAmount: '0.00',
+    expectation: 'Mietende fast weisses Grün + Badge „-10 Min."',
+  },
+  {
+    label: 'DEMO 4',
     endsInMinutes: -1,
     openAmount: '0.00',
     expectation: 'Mietende gelb + Badge „+1 Min."',
   },
   {
-    label: 'DEMO 3',
+    label: 'DEMO 5',
     endsInMinutes: -31,
     openAmount: '0.00',
     expectation: 'Mietende orange + Badge „+31 Min."',
   },
   {
-    label: 'DEMO 4',
+    label: 'DEMO 6',
     endsInMinutes: -61,
     openAmount: '0.00',
     expectation: 'Mietende rot + Badge „+1 Std. 1 Min."',
   },
   {
-    label: 'DEMO 5',
+    label: 'DEMO 7',
     endsInMinutes: 120,
     openAmount: '45.00',
-    expectation: 'Nur „Offener Betrag" rot.',
+    expectation: 'Mietende grün, zusätzlich „Offener Betrag" rot.',
   },
   {
-    label: 'DEMO 6',
+    label: 'DEMO 8',
     endsInMinutes: -61,
     openAmount: '120.00',
     expectation: 'Mietende rot + Badge, „Offener Betrag" rot.',
   },
   {
-    label: 'DEMO 7',
+    label: 'DEMO 9',
     endsInMinutes: -29.5,
     openAmount: '0.00',
     expectation: 'Gelb, wechselt nach ~30 Sek. auf orange (Badge zählt mit).',
+  },
+  {
+    label: 'DEMO 10',
+    endsInMinutes: 1.5,
+    openAmount: '0.00',
+    expectation:
+      'Blassestes Grün, wechselt in rund einer Minute auf gelb (Badge „-1 Min." → „+0 Min.").',
   },
 ];
 
@@ -140,11 +159,7 @@ function setStatusBadgeColor(row: HTMLTableRowElement) {
   }
 }
 
-function buildDemoRow(
-  template: HTMLTableRowElement,
-  demoRow: DemoRow,
-  remarkColumnIndex: number,
-) {
+function buildDemoRow(template: HTMLTableRowElement, demoRow: DemoRow, remarkColumnIndex: number) {
   const row = template.cloneNode(true) as HTMLTableRowElement;
   row.setAttribute(DEMO_ROW_ATTRIBUTE, 'true');
 

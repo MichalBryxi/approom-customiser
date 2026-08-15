@@ -269,6 +269,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalErfasstDurchFilter: true,
   rentalErfasstDurchFilterPattern: '',
   rentalListOpenAmount: true,
+  rentalListOnTime: true,
   rentalListOverdue: true,
   rentalListOverdue30: true,
   rentalListOverdue60: true,
@@ -478,6 +479,20 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     ],
   },
   {
+    id: 'rentalListOnTime',
+    groupId: 'rental-rent',
+    label: 'Mietende noch nicht erreicht: Zelle grün',
+    description:
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" grün, solange das Mietende noch nicht erreicht ist. Die Farbe zeigt, wie viel Zeit bleibt: kräftiges Grün ab 3 Std. 30 Min. Restzeit, danach wird es Minute für Minute blasser, bis es beim Mietende fast weiss ist. Der Verlauf läuft automatisch weiter, ohne die Seite neu zu laden; ist das Mietende erreicht, gelten die Mietende-Farben.',
+    descriptionParts: [
+      'Färbt bei Zeilen mit Status „Vermietet" die Zelle „Mietende" grün, solange das Mietende noch nicht erreicht ist. Die Farbe zeigt, wie viel Zeit bleibt: ',
+      { text: 'ab 3 Std. 30 Min.', backgroundColor: RENTAL_LIST_COLORS.onTimeVivid },
+      ' kräftiges Grün, danach Minute für Minute blasser bis ',
+      { text: 'kurz vor Mietende', backgroundColor: RENTAL_LIST_COLORS.onTimeFaint },
+      '. Der Verlauf läuft automatisch weiter, ohne die Seite neu zu laden; ist das Mietende erreicht, gelten die Mietende-Farben.',
+    ],
+  },
+  {
     id: 'rentalListOverdue',
     groupId: 'rental-rent',
     label: 'Mietende überschritten: Zelle gelb',
@@ -516,13 +531,15 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   {
     id: 'rentalListOverdueBadge',
     groupId: 'rental-rent',
-    label: 'Mietende überschritten: Dauer als Badge',
+    label: 'Restzeit / überschrittene Zeit als Badge',
     description:
-      'Zeigt bei Zeilen mit Status „Vermietet" in der Zelle „Mietende" ein schwarzes Badge mit weisser Schrift an, sobald das Mietende vorbei ist — z. B. „+45 Min." oder „+2 Std. 15 Min.". Der Wert zählt minütlich weiter, ohne die Seite neu zu laden, und ist unabhängig von den Mietende-Farben ein- und ausschaltbar.',
+      'Zeigt bei Zeilen mit Status „Vermietet" in der Zelle „Mietende" ein Badge mit der Zeitspanne bis zum bzw. seit dem Mietende an. Vor dem Mietende ist es weiss mit schwarzer Schrift und zählt herunter („-2 Std. 15 Min."), danach schwarz mit weisser Schrift und zählt herauf („+45 Min."). Der Wert ändert sich minütlich, ohne die Seite neu zu laden, und ist unabhängig von den Mietende-Farben ein- und ausschaltbar.',
     descriptionParts: [
-      'Zeigt bei Zeilen mit Status „Vermietet" in der Zelle „Mietende" ein Badge ',
+      'Zeigt bei Zeilen mit Status „Vermietet" in der Zelle „Mietende" ein Badge an: vor dem Mietende ',
+      { text: '-2 Std. 15 Min.', backgroundColor: '#fff', color: '#000' },
+      ' herunterzählend, danach ',
       { text: '+45 Min.', backgroundColor: '#000', color: '#fff' },
-      ' an, sobald das Mietende vorbei ist. Der Wert zählt minütlich weiter, ohne die Seite neu zu laden.',
+      ' heraufzählend. Der Wert ändert sich minütlich, ohne die Seite neu zu laden.',
     ],
   },
   {
@@ -530,7 +547,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     groupId: 'rental-rent',
     label: 'Demo-Zeilen in der Mietliste',
     description:
-      'Zum Vorführen und Prüfen der Einfärbungen: fügt der Mietliste sieben erfundene Zeilen mit Status „Vermietet" hinzu, die alle Fälle abdecken — jede überfällige Zeile genau eine Minute nach ihrer Schwelle, dazu eine Zeile, die nach rund 30 Sekunden von Gelb auf Orange wechselt. In der Spalte „Kunde" steht jeweils, wie die Zeile aussehen soll. Diese Zeilen existieren nur in der Anzeige, werden nirgends gespeichert und verschwinden beim Ausschalten dieser Option.',
+      'Zum Vorführen und Prüfen der Einfärbungen: fügt der Mietliste erfundene Zeilen mit Status „Vermietet" hinzu, die alle Fälle abdecken — vom kräftigen bis zum blassen Grün vor dem Mietende, jede überfällige Zeile genau eine Minute nach ihrer Schwelle, dazu eine Zeile, die nach rund 30 Sekunden von Gelb auf Orange wechselt. In der Spalte „Bemerkung" steht jeweils, wie die Zeile aussehen soll. Diese Zeilen existieren nur in der Anzeige, werden nirgends gespeichert und verschwinden beim Ausschalten dieser Option.',
   },
   {
     id: 'fahrzeuglagerStickerPrint',

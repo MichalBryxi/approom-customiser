@@ -73,8 +73,9 @@ For behavior-only features (no visible UI), mount a hidden wrapper using the `mo
 | `rentalSignatureNamePrefill` | `/rental/rent/:id` | XPath: button "Unterschrift" | Pre-fills the name field in the signature dialog |
 | `rentalSignatureSaveButton` | `/rental/rent/:id` | XPath: button "Unterschrift" | Styles the signature dialog save button green |
 | `rentalErfasstDurchFilter` | `/rental/rent/new` | `input[name="rental.rent.form.user"]` | Filters "Erfasst durch" dropdown by regex |
-| `rentalListOverdue` / `…30` / `…60` | `/rental/rent` | XPath: table with a "Mietende" header | Colors the "Mietende" cell of "Vermietet" rows yellow / orange / red by how long ago it passed |
-| `rentalListOverdueBadge` | same | same | Adds a black badge with the overdue duration ("+45 Min.") to the "Mietende" cell |
+| `rentalListOnTime` | `/rental/rent` | XPath: table with a "Mietende" header | Colors the "Mietende" cell of "Vermietet" rows green while the end is still ahead — full green from 3.5 h left, fading to near-white at the Mietende |
+| `rentalListOverdue` / `…30` / `…60` | same | same | Colors the "Mietende" cell of "Vermietet" rows yellow / orange / red by how long ago it passed |
+| `rentalListOverdueBadge` | same | same | Adds a badge with the remaining ("-2 Std.", black on white) or overdue ("+45 Min.", white on black) duration to the "Mietende" cell |
 | `rentalListOpenAmount` | same | same | Colors the "Offener Betrag" cell red when the amount is > 0 |
 | `rentalListDemoRows` | same | same | Off by default; injects display-only demo rows covering every colouring case |
 | `checkInQuantityWarning` | `/start.php?men_link=storage` | `#bestell_artikel` | Color-highlights rows by check-in status |

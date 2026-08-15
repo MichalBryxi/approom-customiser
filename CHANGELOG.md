@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.25.0] - 2026-08-15
+
+### Changes
+- **Rental list — demo rows**: the three green rows now walk the whole colour ramp — one minute below the 3 hours 30 minutes cap, at the halfway point, and in the last minute before the "Mietende". The separate row that demonstrated the switch from green to yellow has been dropped; the one-minute row shows the same thing. Nine demo rows in total.
+
 ## [0.24.0] - 2026-08-15
 
 ### New features

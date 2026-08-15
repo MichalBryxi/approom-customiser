@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.24.0] - 2026-08-15
+
+### New features
+- **Rental list — rentals still on time**: for rows with status "Vermietet" whose "Mietende" has not been reached yet, that cell is now coloured green. The shade says how much time is left: full green from 3 hours 30 minutes onwards, then one step paler every minute until it is almost white at the "Mietende". From there the existing yellow/orange/red colouring takes over. Separate toggle in settings under "Rental > Vermietungen", on by default.
+
+### Changes
+- **Rental list — the duration badge now also counts down**: before the "Mietende" it is white with black text and shows the remaining time ("-2 Std. 15 Min."); afterwards it stays black with white text and counts up as before ("+45 Min."). Same single toggle as before, now named "Restzeit / überschrittene Zeit als Badge".
+- **Rental list — demo rows**: extended to ten rows so the green range is covered too (full green, half faded, almost white), including one row that switches from the palest green to yellow after about a minute.
+
 ## [0.23.1] - 2026-08-15
 
 ### Changes

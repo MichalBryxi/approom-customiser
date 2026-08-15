@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.23.1] - 2026-08-15
+
+### Changes
+- **Rental list — demo rows**: the expectation of each demo row ("Keine Markierung.", "Mietende gelb + Badge „+1 Min."", …) now sits in the "Bemerkung" column instead of being appended to "Kunde". Because the demo rows are clones of a real rental row, the Bemerkung cell previously showed that rental's remark; it is now overwritten. "Kunde" shows only the demo label.
+
 ## [0.23.0] - 2026-08-15
 
 ### New features

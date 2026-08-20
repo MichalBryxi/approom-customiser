@@ -313,6 +313,41 @@ function syncEmailGroupVariables(wrapper: HTMLElement, original: HTMLInputElemen
   wrapper.style.setProperty(EMAIL_VARS.radius, borderTopLeftRadius);
 }
 
+/**
+ * Lets the caret cross the "@" as if the two halves were one field: ArrowRight at the
+ * end of the local part continues into the domain, ArrowLeft at the start of the
+ * domain goes back to the end of the local part.
+ *
+ * Shift-arrow is left alone — a selection cannot span two inputs, so extending one is
+ * better handled by the browser's own behaviour of stopping at the edge.
+ */
+function bindEmailCaretBridging(localInput: HTMLInputElement, domainInput: HTMLInputElement) {
+  const caretIsAt = (input: HTMLInputElement, position: number) =>
+    input.selectionStart === position && input.selectionEnd === position;
+
+  const jumpTo = (event: KeyboardEvent, target: HTMLInputElement, position: number) => {
+    event.preventDefault();
+    target.focus();
+    target.setSelectionRange(position, position);
+  };
+
+  localInput.addEventListener('keydown', (event) => {
+    if (
+      event.key === 'ArrowRight' &&
+      !event.shiftKey &&
+      caretIsAt(localInput, localInput.value.length)
+    ) {
+      jumpTo(event, domainInput, 0);
+    }
+  });
+
+  domainInput.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft' && !event.shiftKey && caretIsAt(domainInput, 0)) {
+      jumpTo(event, localInput, localInput.value.length);
+    }
+  });
+}
+
 function bindSplitLabelFocus(label: HTMLLabelElement | null, target: HTMLInputElement) {
   if (!label || label.hasAttribute(SPLIT_LABEL_BOUND_ATTRIBUTE)) {
     return;
@@ -591,10 +626,7 @@ export class CustomerRegistrationFieldsController {
     wrapper.className = `input-group ${EMAIL_GROUP_CLASS}`;
 
     const localInput = createProxyInput(input, 'text');
-    localInput.placeholder = 'john.doe';
-
     const domainInput = createProxyInput(input, 'text');
-    domainInput.placeholder = 'example.com';
 
     const [local, domain] = splitEmail(input.value);
     localInput.value = local;
@@ -610,6 +642,7 @@ export class CustomerRegistrationFieldsController {
     };
     localInput.addEventListener('input', sync);
     domainInput.addEventListener('input', sync);
+    bindEmailCaretBridging(localInput, domainInput);
 
     wrapper.append(localInput, createInputGroupAddon('@', 'input-group-append'), domainInput);
 
@@ -874,11 +907,31 @@ export class CustomerRegistrationFieldsController {
       input.setCustomValidity('');
       input.classList.remove('is-invalid');
     }
+
+    this.getRequiredFeedback(fieldName)?.remove();
+
+    if (fieldName === 'mail') {
+      this.syncEmailInvalidState();
+      return;
+    }
+
     this.getSplitVisibleInputs(fieldName).forEach((visibleInput) =>
       visibleInput.classList.remove('is-invalid'),
     );
+  }
 
-    this.getRequiredFeedback(fieldName)?.remove();
+  /**
+   * The "missing value" and "malformed address" errors both mark the email inputs with
+   * a single "is-invalid" class, so neither may clear it on its own — an empty field
+   * counts as format-valid, and clearing that error used to wipe the red border the
+   * required error had just put there. Derives the flag from the messages on screen.
+   * Call after adding or removing either feedback element.
+   */
+  private syncEmailInvalidState() {
+    const invalid = Boolean(this.getRequiredFeedback('mail') ?? this.getEmailFormatFeedback());
+    for (const visibleInput of this.getSplitVisibleInputs('mail')) {
+      visibleInput.classList.toggle('is-invalid', invalid);
+    }
   }
 
   private getSplitVisibleInputs(fieldId: CustomerRegistrationFieldId): HTMLInputElement[] {
@@ -914,9 +967,8 @@ export class CustomerRegistrationFieldsController {
   }
 
   private clearEmailFormatError() {
-    this.emailLocalInput?.classList.remove('is-invalid');
-    this.emailDomainInput?.classList.remove('is-invalid');
     this.getEmailFormatFeedback()?.remove();
+    this.syncEmailInvalidState();
   }
 
   private validateEmailFormat(showErrorIfInvalid: boolean): boolean {

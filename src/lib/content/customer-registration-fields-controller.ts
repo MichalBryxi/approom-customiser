@@ -50,11 +50,12 @@ const EMAIL_VARS = {
 // values: they can only be read off an element that is actually focused or flagged,
 // and a probe that guesses wrong silently overrides styling the page already gets
 // right. Only the resting metrics above are safe to measure.
+const BORDER_COLOR = '#ced4da';
 const FOCUS_BORDER_COLOR = '#80bdff';
 const FOCUS_SHADOW = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
 const INVALID_BORDER_COLOR = '#dc3545';
 const INVALID_FOCUS_SHADOW = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
-const EMAIL_BORDER_VARIABLE = EMAIL_VARS.border;
+const RESTING_BORDER = `var(${EMAIL_VARS.border}, 1px solid ${BORDER_COLOR})`;
 const INPUT_PADDING_VARIABLE = '--app-room-input-padding-right';
 const SPLIT_STYLE = `
 /* No validation icon on any field: an invalid input is communicated by the red
@@ -78,13 +79,13 @@ const SPLIT_STYLE = `
 
 /* The "@" segment carries the input's own top/bottom border, and the two inputs
    drop their facing borders, so the pair reads as a single continuous field.
-   ${EMAIL_BORDER_VARIABLE} is set from the real input's computed border at mount
+   ${EMAIL_VARS.border} is set from the real input's computed border at mount
    time; the fallback matches stock Bootstrap. */
 .${EMAIL_GROUP_CLASS} .input-group-text {
   padding-left: 0.15rem;
   padding-right: 0.15rem;
-  border-top: var(${EMAIL_BORDER_VARIABLE}, 1px solid #ced4da);
-  border-bottom: var(${EMAIL_BORDER_VARIABLE}, 1px solid #ced4da);
+  border-top: ${RESTING_BORDER};
+  border-bottom: ${RESTING_BORDER};
 }
 
 /* Tight padding on the borderless facing edges keeps both halves hugging the "@";
@@ -117,7 +118,7 @@ const SPLIT_STYLE = `
 
 /* Only for a valid field: an invalid one must keep its red border while focused. */
 .${EMAIL_GROUP_CLASS} input:focus:not(.is-invalid) {
-  border-color: var(${EMAIL_VARS.borderColor}, #ced4da);
+  border-color: var(${EMAIL_VARS.borderColor}, ${BORDER_COLOR});
 }
 
 .${EMAIL_GROUP_CLASS}:focus-within {
@@ -197,6 +198,10 @@ function applyLabelContent(element: HTMLElement, text: string, mandatory: boolea
 }
 
 
+function getFieldDefinition(id: CustomerRegistrationFieldId) {
+  return CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find((field) => field.id === id) ?? null;
+}
+
 function getControlInputs(field: CustomerRegistrationFieldDefinition) {
   return Array.from(
     document.querySelectorAll<HTMLInputElement>(
@@ -248,6 +253,18 @@ function splitEmail(value: string): [string, string] {
 
 function isValidEmailFormat(value: string) {
   return value === '' || EMAIL_PATTERN.test(value);
+}
+
+/**
+ * Builds one of the visible inputs that stand in for a hidden ERP input, inheriting
+ * its classes so the theme styles the replacement exactly like the original.
+ */
+function createProxyInput(original: HTMLInputElement, type: string) {
+  const proxy = document.createElement('input');
+  proxy.type = type;
+  proxy.className = original.className;
+  proxy.autocomplete = 'off';
+  return proxy;
 }
 
 function createInputGroupAddon(text: string, wrapperClassName: 'input-group-prepend' | 'input-group-append') {
@@ -540,36 +557,44 @@ export class CustomerRegistrationFieldsController {
     });
   }
 
+  /**
+   * Hides the ERP's own input, puts `wrapper` in its place and points everything that
+   * targets the field — the label, the focus-on-error handling — at `focusTarget`.
+   * Shared by the email and phone splits, which differ only in what they build.
+   */
+  private mountSplitField(
+    original: HTMLInputElement,
+    fieldId: CustomerRegistrationFieldId,
+    wrapper: HTMLElement,
+    focusTarget: HTMLInputElement,
+  ) {
+    original.style.display = 'none';
+    original.tabIndex = -1;
+    original.setAttribute('aria-hidden', 'true');
+    original.after(wrapper);
+
+    this.splitFocusTargets.set(fieldId, focusTarget);
+    bindSplitLabelFocus(getLabel(original), focusTarget);
+  }
+
   private applyEmailSplit() {
-    const field = CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find((definition) => definition.id === 'mail');
+    const field = getFieldDefinition('mail');
     const input = field && getPrimaryInput(field);
     if (!input || input.hasAttribute(EMAIL_SPLIT_ATTRIBUTE)) {
       return;
     }
 
     injectStyle(SPLIT_STYLE_ID, SPLIT_STYLE);
-
     input.setAttribute(EMAIL_SPLIT_ATTRIBUTE, 'true');
-    input.style.display = 'none';
-    input.tabIndex = -1;
-    input.setAttribute('aria-hidden', 'true');
 
     const wrapper = document.createElement('div');
     wrapper.className = `input-group ${EMAIL_GROUP_CLASS}`;
 
-    const localInput = document.createElement('input');
-    localInput.type = 'text';
-    localInput.className = input.className;
+    const localInput = createProxyInput(input, 'text');
     localInput.placeholder = 'john.doe';
-    localInput.autocomplete = 'off';
 
-    const atSign = createInputGroupAddon('@', 'input-group-append');
-
-    const domainInput = document.createElement('input');
-    domainInput.type = 'text';
-    domainInput.className = input.className;
+    const domainInput = createProxyInput(input, 'text');
     domainInput.placeholder = 'example.com';
-    domainInput.autocomplete = 'off';
 
     const [local, domain] = splitEmail(input.value);
     localInput.value = local;
@@ -586,44 +611,31 @@ export class CustomerRegistrationFieldsController {
     localInput.addEventListener('input', sync);
     domainInput.addEventListener('input', sync);
 
-    wrapper.append(localInput, atSign, domainInput);
-    input.after(wrapper);
+    wrapper.append(localInput, createInputGroupAddon('@', 'input-group-append'), domainInput);
+
+    this.mountSplitField(input, 'mail', wrapper, localInput);
     syncEmailGroupVariables(wrapper, input);
 
     this.emailLocalInput = localInput;
     this.emailDomainInput = domainInput;
-    this.splitFocusTargets.set('mail', localInput);
-
-    bindSplitLabelFocus(getLabel(input), localInput);
   }
 
   private applyPhoneSplit() {
     injectStyle(SPLIT_STYLE_ID, SPLIT_STYLE);
 
-    for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
-      if (!PHONE_FIELDS.includes(field.id)) {
-        continue;
-      }
-
-      const input = getPrimaryInput(field);
+    for (const fieldId of PHONE_FIELDS) {
+      const field = getFieldDefinition(fieldId);
+      const input = field && getPrimaryInput(field);
       if (!input || input.hasAttribute(PHONE_SPLIT_ATTRIBUTE)) {
         continue;
       }
 
       input.setAttribute(PHONE_SPLIT_ATTRIBUTE, 'true');
-      input.style.display = 'none';
-      input.tabIndex = -1;
-      input.setAttribute('aria-hidden', 'true');
 
       const wrapper = document.createElement('div');
       wrapper.className = PHONE_GROUP_CLASS;
 
-      const prefix = createInputGroupAddon(PHONE_PREFIX, 'input-group-prepend');
-
-      const visibleInput = document.createElement('input');
-      visibleInput.type = 'tel';
-      visibleInput.className = input.className;
-      visibleInput.autocomplete = 'off';
+      const visibleInput = createProxyInput(input, 'tel');
       visibleInput.value = input.value.startsWith(PHONE_PREFIX)
         ? input.value.slice(PHONE_PREFIX.length)
         : input.value;
@@ -633,12 +645,9 @@ export class CustomerRegistrationFieldsController {
         setInputValue(input, combined);
       });
 
-      wrapper.append(prefix, visibleInput);
-      input.after(wrapper);
+      wrapper.append(createInputGroupAddon(PHONE_PREFIX, 'input-group-prepend'), visibleInput);
 
-      this.splitFocusTargets.set(field.id, visibleInput);
-
-      bindSplitLabelFocus(getLabel(input), visibleInput);
+      this.mountSplitField(input, fieldId, wrapper, visibleInput);
     }
   }
 
@@ -721,10 +730,8 @@ export class CustomerRegistrationFieldsController {
   }
 
   private getExtraSectionAnchor() {
-    const mailField = CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find((field) => field.id === 'mail');
-    const mobileField = CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find(
-      (field) => field.id === 'mobile',
-    );
+    const mailField = getFieldDefinition('mail');
+    const mobileField = getFieldDefinition('mobile');
     return (mailField && getFieldGroup(mailField)) ?? (mobileField && getFieldGroup(mobileField));
   }
 
@@ -913,7 +920,7 @@ export class CustomerRegistrationFieldsController {
   }
 
   private validateEmailFormat(showErrorIfInvalid: boolean): boolean {
-    const field = CUSTOMER_REGISTRATION_FIELD_DEFINITIONS.find((definition) => definition.id === 'mail');
+    const field = getFieldDefinition('mail');
     const input = field && getPrimaryInput(field);
     if (!field || !input) {
       return true;

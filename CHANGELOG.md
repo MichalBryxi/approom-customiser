@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0] - 2026-08-20
+
+### Changes
+- **Registration — phone fields**: the "+" in front of the number now sits inside the input instead of in a grey box beside it. No border, no background, and clicking it puts the cursor in the field.
+- **Registration — email field**: the "@" between the two halves is no longer a separate box either. It keeps only the line above and below, the two inputs drop their facing borders, and the local part is right-aligned, so "name@domain" reads as a single field. Focus ring and the red border for an invalid address now frame that whole field rather than one half of it.
+- **Registration — invalid fields**: the warning icon inside the input is gone on every field. An invalid entry is shown by the red border and the red message underneath.
+
 ## [0.25.0] - 2026-08-15
 
 ### Changes

@@ -20,6 +20,13 @@ const chromiumBinary = getDefaultChromiumBinary();
 
 export default defineConfig({
   outDir: 'build',
+  // Offset from WXT's default 3000 so the dev server does not collide with the
+  // other projects in this workspace.
+  dev: {
+    server: {
+      port: 3040,
+    },
+  },
   webExt: {
     startUrls: ['https://erp.app-room.ch'],
     chromiumArgs: ['--user-data-dir=.wxt/chrome-data'],

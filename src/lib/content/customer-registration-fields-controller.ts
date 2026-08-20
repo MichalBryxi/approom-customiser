@@ -12,6 +12,7 @@ import { getLanguage, t } from '../i18n';
 import type { RentalDuration } from './registration-to-rental-automation';
 import { triggerRegistrationToRental } from './registration-to-rental-controller';
 import { setInputValue } from './dom';
+import { injectStyle } from './inject-style';
 
 const MANAGED_ATTRIBUTE = 'data-app-room-customer-registration-fields';
 const RENTAL_BUTTON_ATTRIBUTE = 'data-app-room-rental-buttons';
@@ -31,6 +32,130 @@ const NON_MANDATORY_FIELD_DEFAULTS = new Map<CustomerRegistrationFieldId, string
 ]);
 const PHONE_PREFIX = '+';
 const PHONE_FIELDS: CustomerRegistrationFieldId[] = ['mobile', 'phone_private', 'phone_work'];
+const SPLIT_STYLE_ID = 'app-room-split-input-styles';
+const EMAIL_GROUP_CLASS = 'app-room-email-group';
+const PHONE_GROUP_CLASS = 'app-room-phone-group';
+/**
+ * Custom properties the email group is styled through. They are filled in at mount
+ * time from the ERP's own input styling (see `syncEmailGroupVariables`), so the
+ * faked single input matches the theme; the fallbacks in the stylesheet are stock
+ * Bootstrap values used when probing fails.
+ */
+const EMAIL_VARS = {
+  border: '--app-room-email-border',
+  borderColor: '--app-room-email-border-color',
+  radius: '--app-room-email-radius',
+} as const;
+// Focus and validation colours are stock Bootstrap literals rather than probed
+// values: they can only be read off an element that is actually focused or flagged,
+// and a probe that guesses wrong silently overrides styling the page already gets
+// right. Only the resting metrics above are safe to measure.
+const FOCUS_BORDER_COLOR = '#80bdff';
+const FOCUS_SHADOW = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
+const INVALID_BORDER_COLOR = '#dc3545';
+const INVALID_FOCUS_SHADOW = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+const EMAIL_BORDER_VARIABLE = EMAIL_VARS.border;
+const INPUT_PADDING_VARIABLE = '--app-room-input-padding-right';
+const SPLIT_STYLE = `
+/* No validation icon on any field: an invalid input is communicated by the red
+   border and the red message underneath, nothing else. Dropping the icon also frees
+   the right-hand padding Bootstrap reserves for it. Keep this rule first — the email
+   group below re-tightens the same padding and has to win on source order. */
+.form-control.is-invalid,
+.custom-select.is-invalid,
+.was-validated .form-control:invalid,
+.was-validated .custom-select:invalid {
+  background-image: none;
+  padding-right: var(${INPUT_PADDING_VARIABLE}, 0.75rem);
+}
+
+.${EMAIL_GROUP_CLASS} .input-group-text,
+.${PHONE_GROUP_CLASS} .input-group-text {
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
+
+/* The "@" segment carries the input's own top/bottom border, and the two inputs
+   drop their facing borders, so the pair reads as a single continuous field.
+   ${EMAIL_BORDER_VARIABLE} is set from the real input's computed border at mount
+   time; the fallback matches stock Bootstrap. */
+.${EMAIL_GROUP_CLASS} .input-group-text {
+  padding-left: 0.15rem;
+  padding-right: 0.15rem;
+  border-top: var(${EMAIL_BORDER_VARIABLE}, 1px solid #ced4da);
+  border-bottom: var(${EMAIL_BORDER_VARIABLE}, 1px solid #ced4da);
+}
+
+/* Tight padding on the borderless facing edges keeps both halves hugging the "@";
+   the outer edges keep the theme's normal input padding. */
+.${EMAIL_GROUP_CLASS} input:first-child {
+  text-align: right;
+  border-right: 0;
+  padding-right: 0.1rem;
+}
+
+.${EMAIL_GROUP_CLASS} input:last-child {
+  border-left: 0;
+  padding-left: 0.1rem;
+}
+
+/* An invalid email frames the whole pseudo-input. The two inputs keep the page's own
+   "is-invalid" border — only the "@" segment needs teaching, so the red runs above
+   and below it instead of stopping at the two inputs. */
+.${EMAIL_GROUP_CLASS}:has(input.is-invalid) .input-group-text {
+  border-color: ${INVALID_BORDER_COLOR};
+}
+
+/* The focus ring belongs to the whole "name @ domain" pseudo-input, not to either
+   half, so neither input paints its own; the group draws it on :focus-within.
+   The second selector has to out-specify ".form-control.is-invalid:focus". */
+.${EMAIL_GROUP_CLASS} input:focus,
+.${EMAIL_GROUP_CLASS} input.is-invalid:focus {
+  box-shadow: none;
+}
+
+/* Only for a valid field: an invalid one must keep its red border while focused. */
+.${EMAIL_GROUP_CLASS} input:focus:not(.is-invalid) {
+  border-color: var(${EMAIL_VARS.borderColor}, #ced4da);
+}
+
+.${EMAIL_GROUP_CLASS}:focus-within {
+  border-radius: var(${EMAIL_VARS.radius}, 0.25rem);
+  box-shadow: ${FOCUS_SHADOW};
+}
+
+.${EMAIL_GROUP_CLASS}:focus-within:not(:has(input.is-invalid)) input,
+.${EMAIL_GROUP_CLASS}:focus-within:not(:has(input.is-invalid)) .input-group-text {
+  border-color: ${FOCUS_BORDER_COLOR};
+}
+
+.${EMAIL_GROUP_CLASS}:focus-within:has(input.is-invalid) {
+  box-shadow: ${INVALID_FOCUS_SHADOW};
+}
+
+.${PHONE_GROUP_CLASS} {
+  position: relative;
+}
+
+.${PHONE_GROUP_CLASS} .input-group-prepend {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.${PHONE_GROUP_CLASS} .input-group-text {
+  padding-left: 0.75rem;
+  padding-right: 0;
+}
+
+.${PHONE_GROUP_CLASS} input {
+  padding-left: 1.5rem;
+}
+`;
 const FORM_OBSERVER_OPTIONS: MutationObserverInit = {
   childList: true,
   subtree: true,
@@ -135,6 +260,40 @@ function createInputGroupAddon(text: string, wrapperClassName: 'input-group-prep
 
   wrapper.append(addon);
   return wrapper;
+}
+
+/**
+ * Copies the ERP's own resting input metrics — border, corner radius, right padding —
+ * onto the email group, so the "@" segment draws the same line as the two inputs it
+ * sits between and the icon-free padding reset lands on the theme's real value.
+ *
+ * Deliberately measures the resting state only. Focus and validation styling live on
+ * states that cannot be read without focusing or flagging an element, and a wrong
+ * guess there would override styling the page already applies correctly.
+ * Must run once the group is in the document, otherwise nothing is computed yet.
+ *
+ * `original` is the ERP's own (now hidden) input, deliberately not one of the two we
+ * built: it still resolves the theme's styling but carries none of the group's
+ * overrides, which would otherwise feed our own tightened padding back to ourselves.
+ */
+function syncEmailGroupVariables(wrapper: HTMLElement, original: HTMLInputElement) {
+  const { borderTopWidth, borderTopStyle, borderTopColor, borderTopLeftRadius, paddingRight } =
+    getComputedStyle(original);
+
+  // Published on the root, not the group: the icon-free padding reset applies to
+  // every field on the form, not just the email one.
+  document.documentElement.style.setProperty(INPUT_PADDING_VARIABLE, paddingRight);
+
+  if (borderTopStyle === 'none' || borderTopWidth === '0px') {
+    return;
+  }
+
+  wrapper.style.setProperty(
+    EMAIL_VARS.border,
+    `${borderTopWidth} ${borderTopStyle} ${borderTopColor}`,
+  );
+  wrapper.style.setProperty(EMAIL_VARS.borderColor, borderTopColor);
+  wrapper.style.setProperty(EMAIL_VARS.radius, borderTopLeftRadius);
 }
 
 function bindSplitLabelFocus(label: HTMLLabelElement | null, target: HTMLInputElement) {
@@ -388,13 +547,15 @@ export class CustomerRegistrationFieldsController {
       return;
     }
 
+    injectStyle(SPLIT_STYLE_ID, SPLIT_STYLE);
+
     input.setAttribute(EMAIL_SPLIT_ATTRIBUTE, 'true');
     input.style.display = 'none';
     input.tabIndex = -1;
     input.setAttribute('aria-hidden', 'true');
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'input-group';
+    wrapper.className = `input-group ${EMAIL_GROUP_CLASS}`;
 
     const localInput = document.createElement('input');
     localInput.type = 'text';
@@ -427,6 +588,7 @@ export class CustomerRegistrationFieldsController {
 
     wrapper.append(localInput, atSign, domainInput);
     input.after(wrapper);
+    syncEmailGroupVariables(wrapper, input);
 
     this.emailLocalInput = localInput;
     this.emailDomainInput = domainInput;
@@ -436,6 +598,8 @@ export class CustomerRegistrationFieldsController {
   }
 
   private applyPhoneSplit() {
+    injectStyle(SPLIT_STYLE_ID, SPLIT_STYLE);
+
     for (const field of CUSTOMER_REGISTRATION_FIELD_DEFINITIONS) {
       if (!PHONE_FIELDS.includes(field.id)) {
         continue;
@@ -452,7 +616,7 @@ export class CustomerRegistrationFieldsController {
       input.setAttribute('aria-hidden', 'true');
 
       const wrapper = document.createElement('div');
-      wrapper.className = 'input-group';
+      wrapper.className = PHONE_GROUP_CLASS;
 
       const prefix = createInputGroupAddon(PHONE_PREFIX, 'input-group-prepend');
 

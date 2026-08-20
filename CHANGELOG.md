@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.26.1] - 2026-08-20
+
+### Fixes
+- **Registration — empty email address**: submitting with the email field empty showed the "Bitte E-Mail-Adresse eingeben." message but left the field looking normal. It is now framed in red like every other missing field. The same applied the other way round: correcting a malformed address made the red frame disappear while the message was still there.
+
+### Changes
+- **Registration — email field**: the "john.doe" and "example.com" placeholders are gone; both halves start empty.
+- **Registration — email field**: the arrow keys now cross the "@". Right arrow at the end of the first half jumps to the start of the second, left arrow at the start of the second jumps back — so it types like a single field.
+
 ## [0.26.0] - 2026-08-20
 
 ### Changes

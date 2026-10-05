@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.26.2] - 2026-10-05
+
+### Fixes
+- **Fahrzeuglager — Etiketten drucken**: after filtering the list by bike type, the button reported "Keine Zeilen gefunden." It now also finds the rows of the filtered table, including when its column headers sit in a separate header table or the size column is not called "RH / Form".
+
 ## [0.26.1] - 2026-08-20
 
 ### Fixes

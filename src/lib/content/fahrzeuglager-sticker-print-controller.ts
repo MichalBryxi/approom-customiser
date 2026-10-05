@@ -37,16 +37,48 @@ export class FahrzeuglagerStickerPrintController {
   }
 
   private extractRows(): FahrzeuglagerStickerRow[] {
-    const table = document.querySelector<HTMLTableElement>('#lagerliste_table');
-    if (!table) return [];
+    // Full list: #lagerliste_table. Filtered-by-type view: a different DataTables table,
+    // recognisable by its Rahmennr. spans — try the known one first, then any such table.
+    const candidates = [
+      document.querySelector<HTMLTableElement>('#lagerliste_table'),
+      ...Array.from(document.querySelectorAll<HTMLTableElement>('table')).filter((table) =>
+        table.tBodies[0]?.querySelector('[title="Rahmennr."]'),
+      ),
+    ].filter((table): table is HTMLTableElement => table !== null);
 
-    const markeIndex = getColumnIndex(table, 'Marke');
-    const modellIndex = getColumnIndex(table, 'Modell');
-    const rhIndex = getColumnIndex(table, 'RH / Form');
+    for (const table of new Set(candidates)) {
+      const rows = this.extractTableRows(table);
+      if (rows.length > 0) return rows;
+    }
+    return [];
+  }
 
-    return Array.from(table.tBodies[0]?.rows ?? [])
+  private extractTableRows(table: HTMLTableElement): FahrzeuglagerStickerRow[] {
+    const markeIndex = this.findColumnIndex(table, ['Marke']);
+    const modellIndex = this.findColumnIndex(table, ['Modell']);
+    const rhIndex = this.findColumnIndex(table, ['RH / Form', 'RH', 'Rahmenhöhe', 'Grösse', 'Größe']);
+
+    return Array.from(table.tBodies)
+      .flatMap((tbody) => Array.from(tbody.rows))
       .map((row) => this.extractRow(row, markeIndex, modellIndex, rhIndex))
       .filter((r): r is FahrzeuglagerStickerRow => r !== null);
+  }
+
+  // DataTables with scrolling moves the visible header into a separate table inside
+  // the same .dataTables_wrapper, so fall back to the wrapper's other tables.
+  private findColumnIndex(table: HTMLTableElement, labels: string[]): number {
+    const wrapper = table.closest('.dataTables_wrapper');
+    const headerTables = [
+      table,
+      ...Array.from(wrapper?.querySelectorAll<HTMLTableElement>('table') ?? []),
+    ];
+    for (const headerTable of headerTables) {
+      for (const label of labels) {
+        const index = getColumnIndex(headerTable, label);
+        if (index !== -1) return index;
+      }
+    }
+    return -1;
   }
 
   private extractRow(

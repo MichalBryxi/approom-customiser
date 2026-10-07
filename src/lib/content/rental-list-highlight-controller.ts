@@ -3,7 +3,7 @@ import { normalizeText } from '../text';
 import { injectStyle } from './inject-style';
 
 /**
- * Highlights cells of the rental list (/rental/rent) for rows that are
+ * Highlights cells of the rental list (/rental/rent). For rows that are
  * currently "Vermietet":
  *
  * - `onTime`       — "Mietende" still ahead → that cell turns green, fading from
@@ -14,6 +14,10 @@ import { injectStyle } from './inject-style';
  * - `overdueBadge` — adds a badge with the remaining ("-2 Std.", white) or the
  *                    overdue ("+45 Min.", black) duration to that cell
  * - `openAmount`   — "Offener Betrag" > 0 → that cell turns red
+ *
+ * For rows that are "Reserviert":
+ *
+ * - `reservedPaid` — "Offener Betrag" is 0 → the "Status" cell turns red
  *
  * Every rule has its own settings toggle and is registered separately, but all
  * of them share this single controller so that only one observer/timer exists.
@@ -27,16 +31,19 @@ export type RentalListHighlightRule =
   | 'overdue'
   | 'overdue30'
   | 'overdue60'
-  | 'overdueBadge';
+  | 'overdueBadge'
+  | 'reservedPaid';
 
 const STYLE_ID = 'approom-rental-list-highlight-style';
 // Also set for the green "still on time" colouring, hence the neutral name.
 const END_CELL_ATTRIBUTE = 'data-app-room-end-highlight';
 const BADGE_ATTRIBUTE = 'data-app-room-overdue-badge';
 const OPEN_AMOUNT_CELL_ATTRIBUTE = 'data-app-room-open-amount';
+const RESERVED_PAID_CELL_ATTRIBUTE = 'data-app-room-reserved-paid';
 const END_COLOR_VARIABLE = '--approom-end-color';
 
 const STATUS_RENTED = 'Vermietet';
+const STATUS_RESERVED = 'Reserviert';
 // "Mietende" cannot be hidden via the column chooser, so it is a safe anchor.
 const END_COLUMN_HEADER = 'Mietende';
 const STATUS_CELL_SELECTOR = '.column-status-class';
@@ -86,6 +93,9 @@ span[${BADGE_ATTRIBUTE}="remaining"] {
 td[${OPEN_AMOUNT_CELL_ATTRIBUTE}] {
   background-color: ${RENTAL_LIST_COLORS.openAmount} !important;
 }
+td[${RESERVED_PAID_CELL_ATTRIBUTE}] {
+  background-color: ${RENTAL_LIST_COLORS.reservedPaid} !important;
+}
 `;
 
 /** White counts down to the Mietende, black counts up from it. */
@@ -98,6 +108,8 @@ type RowHighlight = {
   badge: { text: string; variant: BadgeVariant } | null;
   /** "Offener Betrag" > 0 — colours that cell red. */
   highlightOpenAmount: boolean;
+  /** "Reserviert" with nothing left to pay — colours the "Status" cell red. */
+  highlightReservedPaid: boolean;
   nextChangeAt: number | null;
 };
 
@@ -150,15 +162,28 @@ function findRentalTable() {
   return header?.closest('table') ?? null;
 }
 
-function isRented(row: HTMLTableRowElement) {
+function hasStatus(row: HTMLTableRowElement, status: string) {
   const statusCell = row.querySelector(STATUS_CELL_SELECTOR);
   if (!statusCell) {
     return false;
   }
 
   return Array.from(statusCell.querySelectorAll('span')).some(
-    (badge) => normalizeText(badge.textContent) === STATUS_RENTED,
+    (badge) => normalizeText(badge.textContent) === status,
   );
+}
+
+/** Null when the "Offener Betrag" column is hidden via the column chooser. */
+function readOpenAmount(row: HTMLTableRowElement) {
+  const cell = row.querySelector(OPEN_AMOUNT_CELL_SELECTOR);
+  return cell ? parseAmount(cell.textContent ?? '') : null;
+}
+
+function toggleCellAttribute(row: HTMLTableRowElement, selector: string, attribute: string, on: boolean) {
+  const cell = row.querySelector(selector)?.closest('td') ?? null;
+  if (cell && on !== cell.hasAttribute(attribute)) {
+    cell.toggleAttribute(attribute, on);
+  }
 }
 
 /** Puts the badge right after the date text, so it stays on the same line. */
@@ -196,8 +221,17 @@ function setOverdueBadge(endCell: HTMLElement, state: RowHighlight['badge']) {
 }
 
 /** The "Mietende" is unusable (not rented, unparsable date) — leave that cell alone. */
-function withoutEndHighlight(highlightOpenAmount: boolean): RowHighlight {
-  return { endCellColor: null, badge: null, highlightOpenAmount, nextChangeAt: null };
+function withoutEndHighlight(
+  highlightOpenAmount: boolean,
+  highlightReservedPaid = false,
+): RowHighlight {
+  return {
+    endCellColor: null,
+    badge: null,
+    highlightOpenAmount,
+    highlightReservedPaid,
+    nextChangeAt: null,
+  };
 }
 
 function applyRowHighlight(row: HTMLTableRowElement, state: RowHighlight) {
@@ -221,10 +255,13 @@ function applyRowHighlight(row: HTMLTableRowElement, state: RowHighlight) {
     setOverdueBadge(endCellContent, state.badge);
   }
 
-  const openAmountCell = row.querySelector(OPEN_AMOUNT_CELL_SELECTOR)?.closest('td') ?? null;
-  if (openAmountCell && state.highlightOpenAmount !== openAmountCell.hasAttribute(OPEN_AMOUNT_CELL_ATTRIBUTE)) {
-    openAmountCell.toggleAttribute(OPEN_AMOUNT_CELL_ATTRIBUTE, state.highlightOpenAmount);
-  }
+  toggleCellAttribute(row, OPEN_AMOUNT_CELL_SELECTOR, OPEN_AMOUNT_CELL_ATTRIBUTE, state.highlightOpenAmount);
+  toggleCellAttribute(
+    row,
+    STATUS_CELL_SELECTOR,
+    RESERVED_PAID_CELL_ATTRIBUTE,
+    state.highlightReservedPaid,
+  );
 }
 
 export class RentalListHighlightController {
@@ -291,13 +328,17 @@ export class RentalListHighlightController {
   }
 
   private evaluateRow(row: HTMLTableRowElement, now: number): RowHighlight {
-    if (!isRented(row)) {
-      return withoutEndHighlight(false);
+    if (!hasStatus(row, STATUS_RENTED)) {
+      const highlightReservedPaid =
+        this.enabledRules.has('reservedPaid') &&
+        hasStatus(row, STATUS_RESERVED) &&
+        readOpenAmount(row) === 0;
+
+      return withoutEndHighlight(false, highlightReservedPaid);
     }
 
     const highlightOpenAmount =
-      this.enabledRules.has('openAmount') &&
-      parseAmount(row.querySelector(OPEN_AMOUNT_CELL_SELECTOR)?.textContent ?? '') > 0;
+      this.enabledRules.has('openAmount') && (readOpenAmount(row) ?? 0) > 0;
 
     const endsAt = parseEndDate(row.querySelector(END_CELL_SELECTOR)?.textContent ?? '');
     if (endsAt === null) {
@@ -356,7 +397,7 @@ export class RentalListHighlightController {
       }
     }
 
-    return { endCellColor, badge, highlightOpenAmount, nextChangeAt };
+    return { endCellColor, badge, highlightOpenAmount, highlightReservedPaid: false, nextChangeAt };
   }
 
   private scheduleRefresh(nextChangeAt: number, now: number) {

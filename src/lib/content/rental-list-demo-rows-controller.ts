@@ -11,16 +11,21 @@ const END_COLUMN_HEADER = 'Mietende';
 const REMARK_COLUMN_HEADER = 'Bemerkung';
 
 const MINUTE = 60 * 1000;
-// Every demo row is a rented one — that is the only status the colouring reacts to.
-const DEMO_STATUS = 'Vermietet';
-// The ERP's badge colour for "Vermietet". The cloned template row may carry any
-// other status colour, so it has to be overwritten to match the status text.
-const DEMO_STATUS_BADGE_CLASS = 'ar-color-badge-content-yellow';
-const BADGE_COLOR_CLASS_PATTERN = /ar-color-badge-content-[\w-]+/g;
+type DemoStatus = 'Vermietet' | 'Reserviert';
+// The ERP's known badge colours per status. The cloned template row may carry
+// any other status colour, so it has to be overwritten to match the status text.
+// Statuses missing here take the colour from a real row with that status, if
+// one is on the page.
+const STATUS_BADGE_CLASSES: Partial<Record<DemoStatus, string>> = {
+  Vermietet: 'ar-color-badge-content-yellow',
+};
+const BADGE_COLOR_CLASS_PATTERN = /ar-color-badge-content-[\w-]+/;
 const STATUS_BADGE_SELECTOR = '.column-status-class [class*="ar-color-badge-content-"]';
 
 type DemoRow = {
   label: string;
+  /** Defaults to "Vermietet". */
+  status?: DemoStatus;
   /** Minutes relative to now — negative is in the past. */
   endsInMinutes: number;
   openAmount: string;
@@ -86,6 +91,20 @@ const DEMO_ROWS: DemoRow[] = [
     openAmount: '0.00',
     expectation: 'Gelb, wechselt nach ~30 Sek. auf orange (Badge zählt mit).',
   },
+  {
+    label: 'DEMO 10',
+    status: 'Reserviert',
+    endsInMinutes: 300,
+    openAmount: '0.00',
+    expectation: 'Reserviert ohne offenen Betrag: „Status" rot, Mietende ungefärbt, kein Badge.',
+  },
+  {
+    label: 'DEMO 11',
+    status: 'Reserviert',
+    endsInMinutes: 300,
+    openAmount: '45.00',
+    expectation: 'Reserviert mit offenem Betrag: nichts gefärbt, kein Badge.',
+  },
 ];
 
 function formatDateTime(timestamp: number) {
@@ -148,13 +167,37 @@ function setCellTextByIndex(row: HTMLTableRowElement, columnIndex: number, text:
   cell.replaceChildren(span);
 }
 
-function setStatusBadgeColor(row: HTMLTableRowElement) {
+/** Colour class the ERP uses for `status`, read from a real row showing it. */
+function findStatusBadgeClass(tbody: HTMLTableSectionElement, status: DemoStatus) {
+  const known = STATUS_BADGE_CLASSES[status];
+  if (known) {
+    return known;
+  }
+
+  const badge = Array.from(
+    tbody.querySelectorAll(`${BODY_ROW_SELECTOR}:not([${DEMO_ROW_ATTRIBUTE}]) ${STATUS_BADGE_SELECTOR}`),
+  ).find((element) => normalizeText(element.textContent) === status);
+
+  return badge?.className.match(BADGE_COLOR_CLASS_PATTERN)?.[0] ?? null;
+}
+
+function setStatusBadgeColor(row: HTMLTableRowElement, badgeClass: string | null) {
+  if (!badgeClass) {
+    return;
+  }
+
+  const pattern = new RegExp(BADGE_COLOR_CLASS_PATTERN.source, 'g');
   for (const badge of Array.from(row.querySelectorAll(STATUS_BADGE_SELECTOR))) {
-    badge.className = badge.className.replace(BADGE_COLOR_CLASS_PATTERN, DEMO_STATUS_BADGE_CLASS);
+    badge.className = badge.className.replace(pattern, badgeClass);
   }
 }
 
-function buildDemoRow(template: HTMLTableRowElement, demoRow: DemoRow, remarkColumnIndex: number) {
+function buildDemoRow(
+  template: HTMLTableRowElement,
+  demoRow: DemoRow,
+  remarkColumnIndex: number,
+  statusBadgeClass: string | null,
+) {
   const row = template.cloneNode(true) as HTMLTableRowElement;
   row.setAttribute(DEMO_ROW_ATTRIBUTE, 'true');
 
@@ -165,8 +208,8 @@ function buildDemoRow(template: HTMLTableRowElement, demoRow: DemoRow, remarkCol
   setCellTextByIndex(row, remarkColumnIndex, demoRow.expectation);
   setCellText(row, 'column-totalPrice-class', '222.00');
   setCellText(row, 'column-paymentStatus-class', demoRow.openAmount);
-  setCellText(row, 'column-status-class', DEMO_STATUS);
-  setStatusBadgeColor(row);
+  setCellText(row, 'column-status-class', demoRow.status ?? 'Vermietet');
+  setStatusBadgeColor(row, statusBadgeClass);
 
   return row;
 }
@@ -211,7 +254,10 @@ export class RentalListDemoRowsController {
     try {
       const fragment = document.createDocumentFragment();
       for (const demoRow of DEMO_ROWS) {
-        fragment.append(buildDemoRow(template, demoRow, remarkColumnIndex));
+        const status = demoRow.status ?? 'Vermietet';
+        fragment.append(
+          buildDemoRow(template, demoRow, remarkColumnIndex, findStatusBadgeClass(tbody, status)),
+        );
       }
       tbody.prepend(fragment);
     } finally {

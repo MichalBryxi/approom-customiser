@@ -144,6 +144,15 @@ export const CONTENT_FEATURES: ContentFeatureDefinition[] = [
       mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('overdueBadge')),
   },
   {
+    id: 'rentalListReservedPaid',
+    label: 'Reserviert ohne offenen Betrag: Status rot',
+    url: { pathEquals: '/rental/rent' },
+    anchor: rentalListTableAnchor,
+    append: 'before',
+    mount: (wrapper) =>
+      mountHiddenFeature(wrapper, () => rentalListHighlightController.mount('reservedPaid')),
+  },
+  {
     id: 'checkInQuantityWarning',
     label: 'Warnung bei zu kleiner Einbuchmenge',
     url: storageOrderFrameUrl,

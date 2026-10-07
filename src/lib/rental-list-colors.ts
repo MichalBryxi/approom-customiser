@@ -14,6 +14,8 @@ export const RENTAL_LIST_COLORS = {
   // Background of the "Offener Betrag" cell — deliberately the same red as the
   // 60-minute overdue colour, so both markings read as one set.
   openAmount: RED,
+  // Background of the "Status" cell of a "Reserviert" row with nothing left to pay.
+  reservedPaid: RED,
   onTimeVivid: ON_TIME_VIVID,
   onTimeFaint: ON_TIME_FAINT,
 } as const;

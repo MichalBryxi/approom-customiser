@@ -274,6 +274,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   rentalListOverdue30: true,
   rentalListOverdue60: true,
   rentalListOverdueBadge: true,
+  rentalListReservedPaid: true,
   rentalListDemoRows: false,
   absenceCalendarExport: true,
   absenceCalendarExportMarkActive: true,
@@ -543,11 +544,23 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     ],
   },
   {
+    id: 'rentalListReservedPaid',
+    groupId: 'rental-rent',
+    label: 'Reserviert ohne offenen Betrag: Status rot',
+    description:
+      'Färbt in der Mietliste bei Zeilen mit Status „Reserviert" und einem offenen Betrag von 0 die Zelle „Status" rot. Gefärbt wird nur diese Zelle, nicht die ganze Zeile. Ist die Spalte „Offener Betrag" ausgeblendet, wird nichts gefärbt.',
+    descriptionParts: [
+      'Färbt in der Mietliste bei Zeilen mit Status „Reserviert" und einem offenen Betrag von 0 die Zelle ',
+      { text: 'Status', backgroundColor: RENTAL_LIST_COLORS.reservedPaid },
+      ' rot. Gefärbt wird nur diese Zelle, nicht die ganze Zeile. Ist die Spalte „Offener Betrag" ausgeblendet, wird nichts gefärbt.',
+    ],
+  },
+  {
     id: 'rentalListDemoRows',
     groupId: 'rental-rent',
     label: 'Demo-Zeilen in der Mietliste',
     description:
-      'Zum Vorführen und Prüfen der Einfärbungen: fügt der Mietliste erfundene Zeilen mit Status „Vermietet" hinzu, die alle Fälle abdecken — vom kräftigen bis zum blassen Grün vor dem Mietende, jede überfällige Zeile genau eine Minute nach ihrer Schwelle, dazu eine Zeile, die nach rund 30 Sekunden von Gelb auf Orange wechselt. In der Spalte „Bemerkung" steht jeweils, wie die Zeile aussehen soll. Diese Zeilen existieren nur in der Anzeige, werden nirgends gespeichert und verschwinden beim Ausschalten dieser Option.',
+      'Zum Vorführen und Prüfen der Einfärbungen: fügt der Mietliste erfundene Zeilen hinzu, die alle Fälle abdecken — vom kräftigen bis zum blassen Grün vor dem Mietende, jede überfällige Zeile genau eine Minute nach ihrer Schwelle, eine Zeile, die nach rund 30 Sekunden von Gelb auf Orange wechselt, sowie zwei „Reserviert"-Zeilen mit und ohne offenen Betrag. In der Spalte „Bemerkung" steht jeweils, wie die Zeile aussehen soll. Diese Zeilen existieren nur in der Anzeige, werden nirgends gespeichert und verschwinden beim Ausschalten dieser Option.',
   },
   {
     id: 'fahrzeuglagerStickerPrint',

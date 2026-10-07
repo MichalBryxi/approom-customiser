@@ -18,6 +18,7 @@ export type FeatureId =
   | 'rentalListOverdue30'
   | 'rentalListOverdue60'
   | 'rentalListOverdueBadge'
+  | 'rentalListReservedPaid'
   | 'rentalListDemoRows'
   | 'absenceCalendarExport'
   | 'fahrzeuglagerStickerPrint'
@@ -87,6 +88,7 @@ export type ExtensionSettings = {
   rentalListOverdue30: boolean;
   rentalListOverdue60: boolean;
   rentalListOverdueBadge: boolean;
+  rentalListReservedPaid: boolean;
   rentalListDemoRows: boolean;
   absenceCalendarExport: boolean;
   absenceCalendarExportMarkActive: boolean;

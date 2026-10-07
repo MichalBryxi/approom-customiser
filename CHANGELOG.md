@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.0] - 2026-10-07
+
+### New features
+- **Rental list — reserved rentals with nothing left to pay**: for rows with status "Reserviert" whose "Offener Betrag" is 0, the "Status" cell is now coloured red. Nothing is coloured when the "Offener Betrag" column is hidden. Separate toggle in settings under "Rental > Vermietungen", on by default.
+
+### Changes
+- **Rental list — demo rows**: two "Reserviert" rows added, one with nothing left to pay (red "Status") and one with an open amount (no colouring). Eleven demo rows in total.
+
 ## [0.26.2] - 2026-10-05
 
 ### Fixes
